@@ -12,7 +12,7 @@ import streamlit_shadcn_ui as ui
 from streamlit_tile import streamlit_tile
 import streamlit_plotly_events as plotly_events
 from typing import Dict, List, Optional, Tuple
-from config import Config, CHART_CONFIGS, ENHANCED_CSS, NAV_STYLES, PAGES_CONFIG, LANDING_CSS
+from config import Config, CHART_CONFIGS, ENHANCED_CSS, NAV_STYLES, PAGES_CONFIG
 from utils import (
     get_latest_view, get_upcoming_tasks,
     create_engagement, log_interaction, update_milestone_status,
@@ -38,7 +38,6 @@ st.markdown(
 )
 
 st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
-st.markdown(LANDING_CSS, unsafe_allow_html=True)
 
 def refresh_data():
     """Refresh all data in session state"""
@@ -48,82 +47,6 @@ def refresh_data():
     st.session_state.FULL_DATA = get_latest_view(df)
     st.session_state.DATA = st.session_state.FULL_DATA.copy()
     st.session_state.data_refreshed = True
-
-def landing_page():
-    """Renders the landing page with sleek pre-launch styling"""
-    # Hide sidebar for landing page AND remove any purple styling
-    st.markdown("""
-        <style>
-        .css-1d391kg {display: none}
-        .css-18e3th9 {padding-top: 0rem}
-        .stApp {background-color: #f8f9fa !important;}
-        .main {background-color: #f8f9fa !important;}
-        .block-container {background-color: #f8f9fa !important;}
-        [data-testid="stAppViewContainer"] {background-color: #f8f9fa !important;}
-        [data-testid="stHeader"] {background-color: #f8f9fa !important;}
-        .css-fg4pbf {background-color: #f8f9fa !important;}
-        </style>
-        """, unsafe_allow_html=True)
-    
-    # Top warning banner with moving text
-    st.markdown("""
-        <div class="draft-banner">
-            <div class="moving-text">
-                <span class="material-icons-outlined" style="font-size:32px;vertical-align:middle;margin-right:8px;">warning</span>
-                DRAFT VERSION - NOT FOR CIRCULATION - INTERNAL DEVELOPMENT ONLY 
-                <span class="material-icons-outlined" style="font-size: 32px;vertical-align:middle;margin:0 8px;">warning</span>
-                DRAFT VERSION - NOT FOR CIRCULATION - INTERNAL DEVELOPMENT ONLY 
-                <span class="material-icons-outlined" style="font-size:32px;vertical-align:middle;margin-left:8px;">warning</span>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-        
-    # Large centered heading with icon
-    st.markdown(f"""
-        <div style="text-align: center; margin: 80px 0;">
-            <span class="material-icons" style="font-size:72px;color:#333333;vertical-align:middle;margin-right:24px;">{Config.APP_ICON_NAME}</span>
-            <span style="font-size:4rem;font-weight:600;color:#333333;vertical-align:middle;">{Config.APP_TITLE}</span>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Three column section with 20% margins
-    col1, col2, col3 = st.columns([1, 1, 1])
-    
-    with col1:
-        st.markdown("""
-            <div class="feature-card analytics">
-                <span class="material-icons-outlined feature-icon">query_stats</span>
-                <h3>Real-time Analytics</h3>
-                <p>Track engagement progress, success rates, and performance metrics across your entire portfolio with dynamic dashboards and interactive visualizations.</p>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-            <div class="feature-card global">
-                <span class="material-icons-outlined feature-icon">public</span>
-                <h3>Global Coverage</h3>
-                <p>Monitor engagements across regions and sectors with comprehensive geographic analysis, ESG focus tracking, and milestone management capabilities.</p>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("""
-            <div class="feature-card workflow">
-                <span class="material-icons-outlined feature-icon">speed</span>
-                <h3>Streamlined Workflow</h3>
-                <p>Manage tasks, log interactions, and track outcomes with an intuitive interface designed for investment professionals and engagement specialists.</p>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # Enter app button
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("Enter Application", key="enter_app", help="Access the engagement tracking platform"):
-            st.session_state.selected_page = 'Dashboard'
-            st.rerun()
 
 def create_alert_section(this_week_tasks, this_month_tasks):
     col1, col2 = st.columns(2)
@@ -821,7 +744,6 @@ def company_deep_dive():
     render_hr(margin_top=10, margin_bottom=10)
 
 PAGE_FUNCTIONS = {
-    "landing": landing_page,
     "dashboard": dashboard,
     "engagement_management": engagement_operations,
     "task_management": task_management,
@@ -830,17 +752,13 @@ PAGE_FUNCTIONS = {
 }
 
 def navigation():
-    # Don't show sidebar on landing page
-    if st.session_state.get('selected_page') == 'Landing':
-        return
-    
     with st.sidebar:
         st.markdown(""" \n """)
         page_titles = list(PAGES_CONFIG.keys())
         page_icons = [PAGES_CONFIG[p]['icon'] for p in page_titles]
         # Initialize selected page if not exists
         if 'selected_page' not in st.session_state:
-            st.session_state.selected_page = 'Landing'
+            st.session_state.selected_page = 'Dashboard'
         try:
             default_index = page_titles.index(st.session_state.selected_page)
         except ValueError:
@@ -890,19 +808,13 @@ def navigation():
             st.session_state['DATA'] = st.session_state['FULL_DATA'].copy()
 
 def main():
-    # Initialize session state variables
-    if 'selected_page' not in st.session_state:
-        st.session_state.selected_page = 'Landing'
-    
-    # Show landing page without header/hr if it's the landing page
-    if st.session_state.selected_page == 'Landing':
-        landing_page()
-        return
-    
-    # Show normal header for other pages
     render_icon_header(Config.HEADER_ICONS["app_title"], Config.APP_TITLE, icon_size=32, text_size=32)
     st.markdown('<div style="margin-top:-33px;"></div>', unsafe_allow_html=True)
     render_hr()
+    
+    # Initialize session state variables
+    if 'selected_page' not in st.session_state:
+        st.session_state.selected_page = 'Dashboard'
     
     if 'validator' not in st.session_state or 'FULL_DATA' not in st.session_state:
         with st.spinner('Loading data...'):
