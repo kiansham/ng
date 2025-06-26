@@ -1,0 +1,73 @@
+company_name,isin,aqr_id,gics_sector,country,region,program,e,s,g,Climate Change,Water,Forests,Other,objective,milestone,milestone_status,start_date,target_date,last_interaction_date,interaction_type,interaction_summary,outcome_status,outcome_date,next_action_date,escalation_level,lessons_learned,engagement_id,interactions,theme,created_date,created_by
+ExRon,ISIN1000,AQR0,Energy,USA,North America,CDP,True,False,False,Y,,,,CDP Disclosure,Initiated,Amber,2025-10-17,2025-12-31,,Email,Sent Email,,,,None Required,Not available,1,[],,,
+Ditch Bank,ISIN1001,AQR1,Financials,Germany,Europe,CDP,True,False,False,Y,Y,,,CDP Disclosure,Aspiration,Green,2025-01-02,2025-12-31,2025-06-26 00:00:00,Call,Testing. Kian is ainm dom,Partial,08/06/2025,2025-07-10 00:00:00,None Required,Not available,2,"[
+  {
+    ""interaction_id"": ""7f400336-f9d2-41e6-aabb-6b9e6db79ac2"",
+    ""interaction_type"": ""Call"",
+    ""interaction_summary"": ""Testing. Kian is ainm dom"",
+    ""interaction_date"": ""2025-06-26"",
+    ""outcome_status"": ""Partial"",
+    ""milestone"": ""Aspiration"",
+    ""milestone_status"": ""Green"",
+    ""escalation_level"": ""None Required"",
+    ""logged_by"": ""System"",
+    ""logged_date"": ""2025-06-26""
+  }
+]",,,
+Mitsi,ISIN1002,AQR2,Industrials,Japan,Asia,CDP,True,False,False,Y,,,,Discuss Company Position,Aspiration,Amber,2025-01-15,2025-12-31,,Email,Sent Email,Neutral,02/06/2025,,None Required,Not available,3,[],,,
+National Gid,ISIN1003,AQR3,Utilities,UK,Europe,CDP,True,False,False,,Y,,,Verify,Verified,Green,2025-01-22,2025-12-31,,Meeting,Discussed ESG,Achieved,13/05/2025,,None Required,Not available,4,[],,,
+Sante Pour Tous,ISIN1004,AQR4,Health Care,France,Europe,CDP,True,False,False,,Y,,,Discuss Company Position,Constructive Response,Red,2025-01-29,2025-12-31,,Call,Discussed ESG,Neutral,01/04/2025,,Follow Up,Not available,5,[],,,
+Poutine Industries,ISIN1005,AQR5,Materials,Canada,North America,CDP,True,False,False,Y,,,,CDP Disclosure,Partial Disclosure,Green,2025-05-02,2025-12-31,,Call,Discussed ESG,Partial,15/06/2025,,None Required,Not available,6,[],,,
+Boomerang Services,ISIN1006,AQR6,Consumer Staples,Australia,Oceania,CDP,True,False,False,,,Y,,Discuss Company Position,Commitment Made,Green,2025-04-26,2025-12-31,,Call,Discussed ESG,Partial,13/06/2025,,None Required,Not available,7,[],,,
+Infosys,ISIN1007,AQR7,Information Technology,India,Asia,Other,False,True,False,,,,Y,Flag Disclosure Importance,No Response,Red,2025-02-19,2025-12-31,,Email,Sent Email,No Progress,04/06/2025,,Reminder,Not available,8,[],,,
+Imirt Pele,ISIN1008,AQR8,Consumer Discretionary,Brazil,South America,Direct,False,True,True,,,,Y,Flag Disclosure Importance,Initiated,Amber,2025-02-26,2025-12-31,,Email,Sent Email,No Progress,31/05/2025,,Reminder,Not available,9,[],,,
+Advanced Inc,ISIN1009,AQR9,Industrials,Colombia,South America,Direct,True,False,False,Y,,Y,,Emissions Transparency (Scope 3),Constructive Response,Green,2025-05-03,2025-12-31,2025-06-26,Call,We met them again. there is no progress.,No Progress,09/06/2025,2025-07-10,None Required,Not available,10,"[
+  {
+    ""interaction_id"": ""64f80046-8732-4c29-b182-c39be1c7297e"",
+    ""interaction_type"": ""Meeting"",
+    ""interaction_summary"": ""We met the company. it was ok"",
+    ""interaction_date"": ""2025-06-26"",
+    ""outcome_status"": ""No Progress"",
+    ""milestone"": ""Initiated"",
+    ""milestone_status"": ""Green"",
+    ""escalation_level"": ""None Required"",
+    ""logged_by"": ""System"",
+    ""logged_date"": ""2025-06-26""
+  },
+  {
+    ""interaction_id"": ""3558c2a3-8605-4d3d-a232-f6b37e237d2e"",
+    ""interaction_type"": ""Call"",
+    ""interaction_summary"": ""We met them again. there is no progress."",
+    ""interaction_date"": ""2025-06-26"",
+    ""outcome_status"": ""No Progress"",
+    ""milestone"": ""Constructive Response"",
+    ""milestone_status"": ""Green"",
+    ""escalation_level"": ""None Required"",
+    ""logged_by"": ""System"",
+    ""logged_date"": ""2025-06-26""
+  }
+]",,,
+Global Tech Inc.,ISIN1010,AQR10,Information Technology,USA,North America,CDP,True,False,False,Y,,,,CDP Disclosure,Improving Response,Amber,2025-01-15,2025-12-31,,Email,Initial outreach,No Progress,03/06/2025,,Reminder,Not available,11,[],,,
+Euro-Bank Corp,ISIN1011,AQR11,Financials,Poland,Europe,Direct,False,True,True,Y,,Y,,Discuss Company Position,Commitment Made,Amber,2025-02-10,2025-12-31,,Meeting,Met with IR,Neutral,08/05/2025,,Follow Up,Not available,12,[],,,
+Rising Sun Motors,ISIN1012,AQR12,Consumer Discretionary,South Korea,Asia,CDP,True,False,False,Y,Y,,,CDP Disclosure,No Response,Red,2025-03-01,2025-12-31,,Email,Sent reminder,No Progress,25/05/2025,,Senior Appeal (from AQR),Not available,13,[],,,
+Aussie Mining Co.,ISIN1013,AQR13,Materials,Australia,Oceania,Direct,True,True,False,,Y,,,Emissions Transparency (Scope 3),Commitment Made,Green,2025-03-12,2025-12-31,,Call,Positive discussion,Partial,16/06/2025,,None Required,Not available,14,[],,,
+Pharma-Good,ISIN1014,AQR14,Health Care,Switzerland,Europe,Other,False,True,True,,,,Y,Flag Disclosure Importance,Aspiration,Green,2025-04-01,2025-12-31,,Email,Acknowledged,Neutral,29/05/2025,,None Required,Not available,15,[],,,
+Canuck Retail,ISIN1015,AQR15,Consumer Staples,Thailand,Asia,CDP,True,False,False,,,Y,,CDP Disclosure,Not Started,Amber,2025-07-06,2025-12-31,,Letter,Declined to engage,,,,Collaborative Push,Not available,16,[],,,
+China Energy,ISIN1016,AQR16,Energy,China,Asia,Direct,True,False,False,Y,Y,,,Emissions Transparency (Scope 3),Partial Disclosure,Green,2025-05-02,2025-12-31,,Meeting,Shared partial data,Partial,16/06/2025,,None Required,Not available,17,[],,,
+Utilities Trust,ISIN1017,AQR17,Utilities,Ireland,Europe,CDP,True,True,False,Y,Y,,,Verify,Initiated,Amber,2025-09-28,2025-12-31,,AGM,Confirmed at AGM,,,,None Required,Not available,18,[],,,
+African CommTel,ISIN1018,AQR18,Communication Services,Nigeria,Africa,Other,False,True,False,,Y,,Y,Discuss Company Position,Constructive Response,Amber,2025-05-20,2025-12-31,,Conference Call,Acknowledged but no commitment,Neutral,30/05/2025,,Follow Up,Not available,19,[],,,
+India Industrial,ISIN1019,AQR19,Industrials,India,Asia,CDP,True,False,True,Y,,,Y,Emissions Transparency (Basic),Constructive Response,Amber,2025-06-01,2025-12-31,,Email,Will consider disclosure,No Progress,24/06/2025,,Reminder,Not available,20,[],,,
+Apple,iii,aqr20,Communication Services,USA,North America,CDP,True,True,True,Y,Y,Y,Y,Verify,Constructive Response,Amber,,,,Email,Talked about an  i phones i broke,No Progress,,,None Required,,21,"[
+  {
+    ""interaction_id"": ""4dad1631-3895-4568-b6b6-de56de1288a9"",
+    ""interaction_type"": ""Email"",
+    ""interaction_summary"": ""Talked about an  i phones i broke"",
+    ""interaction_date"": ""2025-06-26"",
+    ""outcome_status"": ""No Progress"",
+    ""milestone"": ""Constructive Response"",
+    ""milestone_status"": ""Amber"",
+    ""escalation_level"": ""None Required"",
+    ""logged_by"": ""System"",
+    ""logged_date"": ""2025-06-26""
+  }
+]",Climate Change,,System
