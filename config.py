@@ -56,7 +56,6 @@ class Config:
     # Chart context descriptions
     CHART_CONTEXTS = {
         "sector": "Distribution of engagements across different GICS sectors.",
-        "region": "Geographic spread of engagements by region.",
         "milestone": "Current milestone stages across all live engagements through their lifecycle."
     }
     
