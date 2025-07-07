@@ -126,7 +126,6 @@ class Config:
 PAGES_CONFIG = {
     "Dashboard": {"icon": "speedometer2", "function": "dashboard"},
     "Engagement Operations": {"icon": "folder-plus", "function": "engagement_management"},
-    "Analytics": {"icon": "graph-up-arrow", "function": "analytics"},
     "Company Profiles": {"icon": "building", "function": "company_deep_dive"},
     "Task Management": {"icon": "list-check", "function": "task_management"},
 }
