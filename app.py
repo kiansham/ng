@@ -28,18 +28,18 @@ def sidebar_filters(df):
         unsafe_allow_html=True
     )
 
-    with st.expander("⚠️ Alerts", expanded=False):
+    with st.expander(":material/notifications: Alerts", expanded=False):
         st.caption("Select to Show Upcoming Events")
         alert_options = st.segmented_control(
             "Alert Type",
-            options=["🚨 Urgent", "📅 Upcoming"],
+            options=[":material/priority_high: Urgent", ":material/schedule: Upcoming"],
             default=None,
             label_visibility="collapsed"
         )
-        show_urgent = alert_options in ["🚨 Urgent", "All"]
-        show_upcoming = alert_options in ["📅 Upcoming", "All"]
+        show_urgent = alert_options in [":material/priority_high: Urgent", "All"]
+        show_upcoming = alert_options in [":material/schedule: Upcoming", "All"]
 
-    with st.expander("🏛️ Company Filters", expanded=False):
+    with st.expander(":material/business: Company Filters", expanded=False):
         companies = st.multiselect("Company", sorted(df.get("company_name", pd.Series()).unique()))
         region = st.multiselect("Region", get_lookup_values("region"))
         
@@ -48,23 +48,23 @@ def sidebar_filters(df):
         country = st.multiselect("Country", all_countries)
         sector = st.multiselect("GICS Sector", get_lookup_values("gics_sector"))
         
-    with st.expander("🗣️ Engagement Type", expanded=False):
-        progs = st.multiselect("Program", get_lookup_values("program"))
-        themes = st.multiselect("Theme", get_lookup_values("theme"))
-        objectives = st.multiselect("Objective", get_lookup_values("objective"))
-        
+    with st.expander(":material/forum: Engagement Type", expanded=False):
         st.caption("ESG Focus Areas")
         esg_opt = st.segmented_control(
             "ESG",
-            options=["🌍 E", "👥 S", "🏛️ G"],
+            options=[":material/eco: E", ":material/groups: S", ":material/account_balance: G"],
             default=None,
             label_visibility="collapsed"
         )
         
-    esg_map = {"All": ["e", "s", "g"], "🌍 E": ["e"], "👥 S": ["s"], "🏛️ G": ["g"]}
+        progs = st.multiselect("Program", get_lookup_values("program"))
+        themes = st.multiselect("Theme", get_lookup_values("theme"))
+        objectives = st.multiselect("Objective", get_lookup_values("objective"))
+        
+    esg_map = {None: ["e", "s", "g"], ":material/eco: E": ["e"], ":material/groups: S": ["s"], ":material/account_balance: G": ["g"]}
     esg = esg_map[esg_opt]
     
-    with st.expander("👥 Engagement Status", expanded=False):
+    with st.expander(":material/people: Engagement Status", expanded=False):
         mile = st.multiselect("Milestone", get_lookup_values("milestone"))
         status = st.multiselect("Status", get_lookup_values("milestone_status"))
 
@@ -83,7 +83,7 @@ def dashboard():
     month_tasks = data[days_ahead.between(7, 30)]
     theme_cols = ["Climate Change", "Water", "Forests", "Other"]
     
-    tab1, tab2, tab3 = st.tabs(["🔍 Overview", "🌍 Geographic Analysis", "🏢 Company Analysis"])
+    tab1, tab2= st.tabs([":material/dashboard: Overview", ":material/public: Geographic Analysis"])
     with tab1:
         col1, col2 = st.columns(2)
         col1.markdown(f'<div class="alert-urgent"><strong>📅 {len(week_tasks)} Meetings This Week</strong><br>Within 7 days</div>', unsafe_allow_html=True)
@@ -307,7 +307,7 @@ def dashboard():
             )
 
     with tab2:
-        render_icon_header(Config.HEADER_ICONS["region"], "Geographical Analysis", 40, 28)
+        render_icon_header(Config.HEADER_ICONS["region"], "Regional & Sector Analysis", 40, 28)
         
         regions = ["Global"] + sorted(data["region"].unique()) if "region" in data.columns else ["Global"]
         selected = st.selectbox("Select to Focus on Region", regions, key="geo_region")
@@ -496,41 +496,12 @@ def dashboard():
             fig = create_chart(data["gics_sector"].value_counts(), chart_type="bar")
             st.plotly_chart(fig, use_container_width=True)
       
-    with tab3:
-        render_icon_header("business", "Company Analysis", 32, 28)
-        full_df = st.session_state['FULL_DATA']
-        filtered_df = st.session_state['DATA']
-
-        company = company_selector_widget(full_df, filtered_df)
-        if not company:
-            return
-
-        data = full_df[full_df["company_name"] == company].iloc[0]
-
-        with st.container(border=True):
-            render_icon_header("apartment", f"Company Snapshot: {data['company_name']}", 32, 28)
-            cols = st.columns(3)
-            cols[0].markdown(f"**Sector:** {data.get('gics_sector', 'N/A')}")
-            cols[1].markdown(f"**Region:** {data.get('region', 'N/A')}")
-            cols[2].markdown(f"**Country:** {data.get('country', 'N/A')}")
-            render_hr(0, 0)
-
-        with st.container(border=True):
-            render_icon_header("camera_alt", "Engagement Snapshot", 38, 28)
-            cols = st.columns(3)
-            cols[0].markdown(f"**Program:** {data.get('program', 'N/A')}")
-            cols[1].markdown(f"**Objective:** {data.get('objective', 'N/A')}")
-            cols[2].markdown(f"**Health:** {data.get('milestone_status', 'N/A')}")
-
-        render_hr(10, 10)
-        render_icon_header("history", "Interaction History")
-        display_interaction_history(data['engagement_id'])
-        render_hr(10, 10)
 
 def engagement_operations():
-    tab1, tab2 = st.tabs([
+    tab1, tab2, tab3 = st.tabs([
         f":material/add_business: Create Engagement",
-        f":material/edit_note: Log Interaction"
+        f":material/edit_note: Log Interaction",
+        f":material/bookmark_manager: Engagement Records"
     ])
     
     with tab1:
@@ -556,7 +527,7 @@ def engagement_operations():
             objective = st.selectbox("Objective", [""] + get_lookup_values("objective"))
 
             render_icon_header("eco", "ESG Focus Areas *", 24, 20)
-            esg = get_esg_selection()
+            esg = get_esg_selection(defaults=(False, False, False))
 
             render_icon_header("schedule", "Timeline", 24, 20)
             col1, col2 = st.columns(2)
@@ -607,7 +578,7 @@ def engagement_operations():
 
     with tab2:
         render_icon_header("edit_note", "Log Interaction", 32, 28)
-        company = company_selector_widget(st.session_state['FULL_DATA'], st.session_state['DATA'])
+        company = company_selector_widget(st.session_state['FULL_DATA'], st.session_state['DATA'], key="log_interaction_company")
         
         if not company:
             st.info("Select a company to log an interaction")
@@ -670,6 +641,36 @@ def engagement_operations():
                     else:
                         st.error(msg)
 
+    with tab3:
+        render_icon_header("business", "Engagement Records", 32, 28)
+        full_df = st.session_state['FULL_DATA']
+        filtered_df = st.session_state['DATA']
+
+        company = company_selector_widget(full_df, filtered_df, key="engagement_records_company")
+        if not company:
+            return
+
+        data = full_df[full_df["company_name"] == company].iloc[0]
+
+        with st.container(border=True):
+            render_icon_header("apartment", f"Company Snapshot: {data['company_name']}", 32, 28)
+            cols = st.columns(3)
+            cols[0].markdown(f"**Sector:** {data.get('gics_sector', 'N/A')}")
+            cols[1].markdown(f"**Region:** {data.get('region', 'N/A')}")
+            cols[2].markdown(f"**Country:** {data.get('country', 'N/A')}")
+            render_hr(0, 0)
+
+        with st.container(border=True):
+            render_icon_header("camera_alt", "Engagement Snapshot", 38, 28)
+            cols = st.columns(3)
+            cols[0].markdown(f"**Program:** {data.get('program', 'N/A')}")
+            cols[1].markdown(f"**Objective:** {data.get('objective', 'N/A')}")
+            cols[2].markdown(f"**Health:** {data.get('milestone_status', 'N/A')}")
+
+        render_hr(10, 10)
+        render_icon_header("history", "Engagement Records")
+        display_interaction_history(data['engagement_id'])
+        render_hr(10, 10)
 def task_management():
     df = st.session_state.get('DATA', pd.DataFrame())
 

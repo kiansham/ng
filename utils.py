@@ -490,7 +490,7 @@ def handle_task_date_display(task_date, today):
     except:
         st.caption("Date error")
 
-def company_selector_widget(full_df, filtered_df):
+def company_selector_widget(full_df, filtered_df, key=None):
     if full_df.empty or "company_name" not in full_df.columns:
         st.warning("No company data")
         return None
@@ -501,7 +501,7 @@ def company_selector_widget(full_df, filtered_df):
     else:
         companies = sorted(full_df["company_name"].unique())
 
-    return st.selectbox("Select Company", companies, index=0) if companies else None
+    return st.selectbox("Select Company", companies, index=0, key=key) if companies else None
 
 def display_interaction_history(engagement_id):
     try:

@@ -81,6 +81,7 @@ class Config:
         "apartment": "apartment",
         "camera_alt": "camera_alt",
         "history": "history",
+        "bookmark_manager": "bookmark_manager",
         "add_business": "add_business",
         "edit_note": "edit_note",
         "description": "description",
