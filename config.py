@@ -1,5 +1,9 @@
 from pathlib import Path
 
+# File paths
+ENGAGEMENTS_CSV_PATH = Path("engagements.csv")
+CONFIG_JSON_PATH = Path("configchoice.json")
+
 class Config:
     # Application settings
     APP_TITLE = "Engagement Tracking Platform"
@@ -69,7 +73,21 @@ class Config:
         "geo": "location_on",
         "milestone": "emoji_events",
         "app_title": "travel_explore",
-        "filter": "tune"
+        "filter": "tune",
+        "insights": "lightbulb",
+        "pie_chart": "pie_chart",
+        "eco": "eco",
+        "business": "business",
+        "apartment": "apartment",
+        "camera_alt": "camera_alt",
+        "history": "history",
+        "add_business": "add_business",
+        "edit_note": "edit_note",
+        "description": "description",
+        "flag": "flag",
+        "schedule": "schedule",
+        "calendar_month": "calendar_month",
+        "timeline": "timeline"
     }
     
     # AgGrid configuration defaults
@@ -125,9 +143,8 @@ class Config:
 # Page and navigation configuration
 PAGES_CONFIG = {
     "Dashboard": {"icon": "speedometer2", "function": "dashboard"},
-    "Engagement Operations": {"icon": "folder-plus", "function": "engagement_management"},
-    "Company Profiles": {"icon": "building", "function": "company_deep_dive"},
-    "Task Management": {"icon": "list-check", "function": "task_management"},
+    "Engagement Log": {"icon": "folder-plus", "function": "engagement_management"},
+    "Calendar": {"icon": "list-check", "function": "task_management"},
 }
 
 # CSS styles
@@ -221,3 +238,53 @@ CHART_CONFIGS = {
         "margin": {"l": 0, "r": 0, "t": 0, "b": 0},
     }
 }
+
+# Calendar view configurations
+CALENDAR_OPTIONS = {
+    "height": "600px",
+    "initialView": "dayGridMonth",
+    "headerToolbar": {
+        "left": "prev,next today",
+        "center": "title",
+        "right": "dayGridMonth,multiMonthYear"
+    }
+}
+
+CALENDAR_STYLES = f"""
+    .fc-button {{
+        background-color: {Config.COLORS['primary']};
+        color: white !important;
+        border: none !important;
+        border-radius: 0.4rem !important;
+        padding: 0.25rem 0.75rem !important;
+        font-weight: 500 !important;
+        font-size: 0.9rem !important;
+        transition: background-color 0.3s ease;
+        text-transform: capitalize;
+    }}
+    .fc-button:hover {{
+        background-color: #2980b9 !important;
+    }}
+    .fc-button-primary:disabled {{
+        background-color: #a9a9a9 !important;
+        color: #e0e0e0 !important;
+    }}
+    .fc-button-active {{
+        background-color: #2980b9 !important;
+    }}
+    .fc-toolbar-title {{
+        font-size: 1.5rem;
+    }}
+    .event-urgent {{
+        background-color: {Config.COLORS['danger']} !important;
+        border-color: #c0392b !important;
+    }}
+    .event-warning {{
+        background-color: {Config.COLORS['warning']} !important;
+        border-color: #d68910 !important;
+    }}
+    .event-upcoming {{
+        background-color: {Config.COLORS['primary']} !important;
+        border-color: #2980b9 !important;
+    }}
+"""

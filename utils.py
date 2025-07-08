@@ -8,11 +8,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import uuid
 import re
-import streamlit_shadcn_ui as ui
-from config import Config
-
-ENGAGEMENTS_CSV_PATH = Path("engagements.csv")
-CONFIG_JSON_PATH = Path("configchoice.json")
+from config import Config, ENGAGEMENTS_CSV_PATH, CONFIG_JSON_PATH
 
 class DataValidator:
     def __init__(self, choices):
@@ -47,6 +43,43 @@ class DataValidator:
                     errors.setdefault(field, []).append(msg)
         
         return errors
+
+def refresh_data():
+    df, choices = load_db()
+    df = fix_column_names(df)
+    st.session_state.validator = DataValidator(choices)
+    st.session_state.FULL_DATA = get_latest_view(df)
+    st.session_state.DATA = st.session_state.FULL_DATA.copy()
+    st.session_state.data_refreshed = True
+    st.session_state.refresh_counter = st.session_state.get('refresh_counter', 0) + 1
+
+def apply_filters(df, filters):
+    if df.empty:
+        return df
+
+    progs, sector, region, country, mile, status, esg, urgent, upcoming, companies, themes, objectives = filters
+    
+    filter_map = {
+        "program": progs, "gics_sector": sector, "region": region,
+        "country": country, "milestone": mile, "milestone_status": status, 
+        "company_name": companies, "theme": themes, "objective": objectives
+    }
+    
+    for col, vals in filter_map.items():
+        if vals and col in df.columns:
+            df = df[df[col].isin(vals)]
+    
+    if esg and all(c in df.columns for c in esg):
+        df = df[df[esg].any(axis=1)]
+    
+    if urgent and "urgent" in df.columns:
+        df = df[df["urgent"]]
+        
+    if upcoming and "next_action_date" in df.columns:
+        days_ahead = (pd.to_datetime(df["next_action_date"]) - pd.Timestamp.now()).dt.days
+        df = df[days_ahead.between(0, 30)]
+    
+    return df
 
 @st.cache_data(ttl=300)
 def load_db():
@@ -302,11 +335,11 @@ def render_metrics(metrics_data):
             col.metric(label, value)
     else:
         for label, value in metrics_data:
-            ui.metric_card(label, value)
+            st.metric(label, value, border=True)
 
-def render_icon_header(icon, text, icon_size=30, text_size=28):
+def render_icon_header(icon, text, icon_size=30, text_size=28, div_style="margin:4px 0 12px 0;"):
     st.markdown(
-        f'<div style="margin:4px 0 12px 0;">'
+        f'<div style="{div_style}">'
         f'<span class="material-icons-outlined" style="vertical-align:middle;color:#333;font-size:{icon_size}px;">{icon}</span>'
         f'<span style="vertical-align:middle;font-size:{text_size}px;font-weight:600;margin-left:10px;">{text}</span>'
         f'</div>',
@@ -394,8 +427,11 @@ def create_chart(data, chart_type="bar", title="", **kwargs):
 
 def create_esg_gauge(label, value, colour, percentage=None):
     tooltip = f"{label}<br/>Count: {value}"
-    if percentage:
+    if percentage is not None:
         tooltip += f"<br/>Share: {percentage}%"
+    
+    # Ensure value is properly set
+    display_value = percentage if percentage is not None else value
         
     return {
         "tooltip": {"show": True, "formatter": tooltip},
@@ -403,8 +439,8 @@ def create_esg_gauge(label, value, colour, percentage=None):
             "type": "gauge",
             "startAngle": 180,
             "endAngle": 0,
-            "radius": "85%",
-            "center": ["50%", "70%"],
+            "radius": "110%",
+            "center": ["50%", "65%"],
             "itemStyle": {"color": colour},
             "progress": {"show": True, "width": 15},
             "axisLine": {"lineStyle": {"width": 15, "color": [[1, "#f0f2f6"]]}},
@@ -415,7 +451,7 @@ def create_esg_gauge(label, value, colour, percentage=None):
             "anchor": {"show": False},
             "min": 0,
             "max": 100,
-            "data": [{"value": value, "name": label}],
+            "data": [{"value": display_value, "name": label}],
             "title": {
                 "show": True,
                 "offsetCenter": [0, "-30%"],
@@ -424,7 +460,7 @@ def create_esg_gauge(label, value, colour, percentage=None):
                 "color": "#262730"
             },
             "detail": {
-                "formatter": "{value}",
+                "formatter": str(value),
                 "offsetCenter": [0, 5],
                 "fontSize": 24,
                 "fontWeight": 700,
@@ -491,7 +527,7 @@ def display_interaction_history(engagement_id):
         if filter_types:
             df = df[df['interaction_type'].isin(filter_types)]
 
-        st.markdown("### Recent Interactions")
+        render_icon_header("timeline", "Recent Interactions", 24, 20)
         if df.empty:
             st.info("No matches found")
         else:
@@ -544,3 +580,38 @@ def render_geo_metrics(total, countries, most_active):
     st.metric("Total Engagements", total, border=True)
     st.metric("Countries Engaged", countries, border=True)
     st.metric("Most Active Country", most_active, border=True)
+
+def df_to_calendar_events(df: pd.DataFrame):
+    events = []
+    
+    # Ensure 'program' column exists and get unique, non-empty programs for resources
+    if 'program' not in df.columns:
+        df['program'] = 'Uncategorized'
+    
+    unique_programs = df['program'].dropna().unique()
+    resources = [{"id": prog, "title": prog} for prog in unique_programs]
+
+    for _, row in df.iterrows():
+        # Skip rows with no valid date
+        if pd.isna(row["next_action_date"]):
+            continue
+
+        # Determine event color and class based on urgency
+        days_left = row.get("days_to_next_action", 99)
+        if days_left <= Config.URGENT_DAYS:
+            className = "event-urgent"
+        elif days_left <= Config.WARNING_DAYS:
+            className = "event-warning"
+        else:
+            className = "event-upcoming"
+
+        event = {
+            "title": row["company_name"],
+            "start": row["next_action_date"].isoformat(),
+            "end": (row["next_action_date"] + timedelta(hours=1)).isoformat(),
+            "resourceId": row["program"],
+            "classNames": [className],
+        }
+        events.append(event)
+
+    return events, resources

@@ -4,14 +4,11 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-import json
 from datetime import datetime, timedelta
 from streamlit_option_menu import option_menu
 from streamlit_echarts import st_echarts
-import streamlit_shadcn_ui as ui 
-from streamlit_tile import streamlit_tile
-import streamlit_plotly_events as plotly_events
-from config import Config, CHART_CONFIGS, ENHANCED_CSS, NAV_STYLES, PAGES_CONFIG
+from streamlit_calendar import calendar
+from config import Config, CHART_CONFIGS, ENHANCED_CSS, NAV_STYLES, PAGES_CONFIG, CALENDAR_OPTIONS, CALENDAR_STYLES
 from utils import *
 
 st.set_page_config(
@@ -24,15 +21,6 @@ st.set_page_config(
 st.markdown('<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">', unsafe_allow_html=True)
 st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
 
-def refresh_data():
-    df, choices = load_db()
-    df = fix_column_names(df)
-    st.session_state.validator = DataValidator(choices)
-    st.session_state.FULL_DATA = get_latest_view(df)
-    st.session_state.DATA = st.session_state.FULL_DATA.copy()
-    st.session_state.data_refreshed = True
-    st.session_state.refresh_counter = st.session_state.get('refresh_counter', 0) + 1
-
 def sidebar_filters(df):
     st.markdown(
         f'<span class="material-icons-outlined" style="vertical-align:middle;color:#333;font-size:18px;">{Config.HEADER_ICONS["filter"]}</span>'
@@ -42,9 +30,14 @@ def sidebar_filters(df):
 
     with st.expander("⚠️ Alerts", expanded=False):
         st.caption("Select to Show Upcoming Events")
-        col1, col2 = st.columns(2)
-        show_urgent = col1.toggle("Urgent", value=False)
-        show_upcoming = col2.toggle("Upcoming", value=False)
+        alert_options = st.segmented_control(
+            "Alert Type",
+            options=["🚨 Urgent", "📅 Upcoming"],
+            default=None,
+            label_visibility="collapsed"
+        )
+        show_urgent = alert_options in ["🚨 Urgent", "All"]
+        show_upcoming = alert_options in ["📅 Upcoming", "All"]
 
     with st.expander("🏛️ Company Filters", expanded=False):
         companies = st.multiselect("Company", sorted(df.get("company_name", pd.Series()).unique()))
@@ -59,43 +52,23 @@ def sidebar_filters(df):
         progs = st.multiselect("Program", get_lookup_values("program"))
         themes = st.multiselect("Theme", get_lookup_values("theme"))
         objectives = st.multiselect("Objective", get_lookup_values("objective"))
-        esg_opt = st.radio("ESG Focus", ["All", "E", "S", "G"], horizontal=True)
         
-    esg = ["e", "s", "g"] if esg_opt == "All" else [esg_opt.lower()]
+        st.caption("ESG Focus Areas")
+        esg_opt = st.segmented_control(
+            "ESG",
+            options=["🌍 E", "👥 S", "🏛️ G"],
+            default=None,
+            label_visibility="collapsed"
+        )
+        
+    esg_map = {"All": ["e", "s", "g"], "🌍 E": ["e"], "👥 S": ["s"], "🏛️ G": ["g"]}
+    esg = esg_map[esg_opt]
     
     with st.expander("👥 Engagement Status", expanded=False):
         mile = st.multiselect("Milestone", get_lookup_values("milestone"))
         status = st.multiselect("Status", get_lookup_values("milestone_status"))
 
     return progs, sector, region, country, mile, status, esg, show_urgent, show_upcoming, companies, themes, objectives
-
-def apply_filters(df, filters):
-    if df.empty:
-        return df
-
-    progs, sector, region, country, mile, status, esg, urgent, upcoming, companies, themes, objectives = filters
-    
-    filter_map = {
-        "program": progs, "gics_sector": sector, "region": region,
-        "country": country, "milestone": mile, "milestone_status": status, 
-        "company_name": companies, "theme": themes, "objective": objectives
-    }
-    
-    for col, vals in filter_map.items():
-        if vals and col in df.columns:
-            df = df[df[col].isin(vals)]
-    
-    if esg and all(c in df.columns for c in esg):
-        df = df[df[esg].any(axis=1)]
-    
-    if urgent and "urgent" in df.columns:
-        df = df[df["urgent"]]
-        
-    if upcoming and "next_action_date" in df.columns:
-        days_ahead = (pd.to_datetime(df["next_action_date"]) - pd.Timestamp.now()).dt.days
-        df = df[days_ahead.between(0, 30)]
-    
-    return df
 
 def dashboard():
     data = st.session_state['DATA']
@@ -108,8 +81,9 @@ def dashboard():
     days_ahead = (pd.to_datetime(data.get("next_action_date")) - today).dt.days
     week_tasks = data[days_ahead.between(0, 6)]
     month_tasks = data[days_ahead.between(7, 30)]
+    theme_cols = ["Climate Change", "Water", "Forests", "Other"]
     
-    tab1, tab2, tab3, tab4 = st.tabs(["🔍 Overview", "🎯 Engagement Analysis", "🌍 Geographic Analysis", "📈 Status Trends"])
+    tab1, tab2, tab3 = st.tabs(["🔍 Overview", "🌍 Geographic Analysis", "🏢 Company Analysis"])
     with tab1:
         col1, col2 = st.columns(2)
         col1.markdown(f'<div class="alert-urgent"><strong>📅 {len(week_tasks)} Meetings This Week</strong><br>Within 7 days</div>', unsafe_allow_html=True)
@@ -132,7 +106,7 @@ def dashboard():
         failed = data["milestone"].str.lower().eq("cancelled").sum() if "milestone" in data.columns else 0
         fail_rate = round(failed / total * 100) if total > 0 else 0
 
-        col1, col2, col3 = st.columns([1, 1, 3])
+        col1, col2, col3 = st.columns([1, 1, 3.5])
         
         with col1:
             st.metric("Total Engagements", total, f"Up {total} MoM", border=True)
@@ -145,86 +119,7 @@ def dashboard():
             st.metric("Fail Rate", f"{fail_rate}%", border=True)
             
         with col3:
-            st.markdown(
-                f'<div style="margin-top:-50px;margin-bottom:8px;">'
-                f'<span class="material-icons-outlined" style="vertical-align:middle;color:#333;font-size:40px;">{Config.HEADER_ICONS["milestone"]}</span>'
-                f'<span style="vertical-align:middle;font-size:28px;font-weight:600;margin-left:10px;">Milestone Progress</span></div>',
-                unsafe_allow_html=True
-            )
-            st.write(Config.CHART_CONTEXTS["milestone"])
-            if "milestone" in data.columns:
-                fig = create_chart(data["milestone"].value_counts(), chart_type="bar")
-                st.plotly_chart(fig, use_container_width=True)
-
-        st.markdown('<div style="margin-top:24px;"></div>', unsafe_allow_html=True)
-
-        
-        esg_data = {}
-        theme_cols = ["Climate Change", "Water", "Forests", "Other"]
-        total_themes = sum((data.get(col, pd.Series()) == "Y").sum() for col in theme_cols)
-        
-        # Always populate esg_data
-        for theme in theme_cols:
-            if theme in data.columns:
-                count = (data[theme] == "Y").sum()
-                esg_data[theme] = (count, round(count / total_themes * 100) if total_themes > 0 else 0)
-            else:
-                esg_data[theme] = (0, 0)
-        
-        col1, col2= st.columns([1, 1])
-        with col1:
-            st.markdown("#### Year to Date Progress")
-            st.markdown("Engagement progress by program. (as % of total planned.)")
-
-            program_list = [p for p in get_lookup_values("program") if p in data.get("program", pd.Series()).unique()]
-            for prog in ["CDP", "Direct"]:
-                if prog in program_list:
-                    prog_df = data[data["program"] == prog]
-                    total_prog = len(prog_df)
-                    excluded = ["not started", "verified", "success", "cancelled"]
-                    active_prog = (~prog_df["milestone"].str.lower().isin(excluded)).sum() if "milestone" in prog_df.columns else 0
-                    pct = round(active_prog / total_prog * 100) if total_prog > 0 else 0
-
-                    # Bullet chart formatting
-                    min_score = 0
-                    median_score = 50
-                    mean_score = pct
-                    max_score = 100
-                    fig = go.Figure()
-                    # Add marker for active %
-                    fig.add_trace(
-                        go.Scatter(
-                            x=[mean_score],
-                            y=[0],
-                            text=[f"{mean_score}%"],
-                            mode="markers+text",
-                            textposition="top center",
-                            marker=dict(color="#4682B4" if prog=="CDP" else "#fc8d62", size=18),
-                            showlegend=False,
-                        )
-                    )
-                    # Add vertical lines for min, median, mean, max
-                    fig.update_layout(
-                        shapes=[
-                            dict(type="line", xref="x", yref="y", x0=min_score, y0=-0.25, x1=min_score, y1=0.25, line=dict(color="blue", width=3)),
-                            dict(type="line", xref="x", yref="y", x0=median_score, y0=-0.25, x1=median_score, y1=0.25, line=dict(color="red", width=3)),
-                            dict(type="line", xref="x", yref="y", x0=mean_score, y0=-0.25, x1=mean_score, y1=0.25, line=dict(color="green", width=3)),
-                            dict(type="line", xref="x", yref="y", x0=max_score, y0=-0.25, x1=max_score, y1=0.25, line=dict(color="orange", width=3)),
-                        ],
-                        xaxis=dict(range=[min_score - 5, max_score + 5], autorange=False),
-                        yaxis=dict(showticklabels=False, range=[-0.5, 0.5]),
-                        title=f"{prog}: {active_prog} of {total_prog} active",
-                        height=175,
-                        margin=dict(l=10, r=10, t=60, b=10),
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        paper_bgcolor='rgba(0,0,0,0)',
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-
-        with col2:
-            render_icon_header(Config.HEADER_ICONS["esg"], "ESG Engagement Focus Areas")
-            st.markdown('<span style="font-size:16px;color:#6c757d;">Distribution across <b>Climate Change</b>, <b>Water</b>, <b>Forests</b>, and <b>Other</b>.</span>', unsafe_allow_html=True)
-            theme_cols = ["Climate Change", "Water", "Forests", "Other"]
+            render_icon_header(Config.HEADER_ICONS["esg"], "ESG Engagement Focus Areas", div_style="margin-top:-57px;")
             theme_data = {}
             
             for theme in theme_cols:
@@ -236,7 +131,6 @@ def dashboard():
             
             total_themes = sum(theme_data.values())
             
-            # Always show theme gauges, even if zero
             for row_idx in range(0, len(theme_cols), 2):
                 gauge_cols = st.columns(2)
                 
@@ -247,64 +141,182 @@ def dashboard():
                         count = theme_data[theme]
                         
                         with gauge_cols[col_idx]:
-                            percentage = round((count / total_themes) * 100) if total_themes > 0 else 0
+                            # Force integer values for consistency
+                            count = int(count)
+                            percentage = int(round((count / total_themes) * 100)) if total_themes > 0 else 0
                             color = Config.ESG_COLORS[theme]
                             
                             option = create_esg_gauge(theme, count, color, percentage)
-                            option["series"][0]["detail"]["formatter"] = str(count)
-                            option["series"][0]["data"][0]["value"] = percentage
-                            option["series"][0]["radius"] = "110%"
-                            option["series"][0]["center"] = ["50%", "65%"]
                             
-                            st_echarts(options=option, height="180px", key=f"esg-{theme}-{st.session_state.get('refresh_counter', 0)}")
+                                # Use stable key that doesn't change with data
+                            st_echarts(
+                            options=option, 
+                            height="200px", 
+                            key=f"main_gauge_{theme.replace(' ', '_')}"
+                        )
+        
+        # Fixed insights section with proper calculations
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            render_icon_header("insights", "Insights", 40, 28)
+            
+            # Calculate theme coverage
+            theme_coverage_count = sum(theme_data.values())
+            avg_themes_per_engagement = round(theme_coverage_count / total, 2) if total > 0 else 0
+            
+            # Calculate CDP percentage
+            cdp_count = (data["program"] == "CDP").sum() if "program" in data.columns else 0
+            cdp_percentage = round(cdp_count / total * 100) if total > 0 else 0
+            direct_count = total - cdp_count
+            direct_percentage = 100 - cdp_percentage
+            
+            # First metric with mini chart
+            st.markdown(f"We've currently begun **{total}** out of **22** engagements.")
+            
+            # Mini progress bar chart for engagements
+            progress_pct = round((total / 22) * 100)
+            fig_eng = go.Figure()
+            
+            # Add background bar
+            fig_eng.add_trace(go.Bar(
+                x=[100],
+                y=['Progress'],
+                orientation='h',
+                marker=dict(color='#e0e0e0'),
+                showlegend=False,
+                hoverinfo='skip'
+            ))
+            
+            # Add progress bar
+            fig_eng.add_trace(go.Bar(
+                x=[progress_pct],
+                y=['Progress'],
+                orientation='h',
+                marker=dict(color='#2E8B57'),
+                text=[f'{total}/22 ({progress_pct}%)'],
+                textposition='inside' if progress_pct > 30 else 'outside',
+                textfont=dict(color='white' if progress_pct > 30 else '#2E8B57'),
+                showlegend=False,
+                hovertemplate=f'{total} out of 22 engagements<br>{progress_pct}% complete<extra></extra>'
+            ))
+            
+            fig_eng.update_layout(
+                height=55,
+                margin=dict(l=0, r=0, t=0, b=0),
+                xaxis=dict(showgrid=False, showticklabels=False, zeroline=False, range=[0, 100]),
+                yaxis=dict(showgrid=False, showticklabels=False),
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                barmode='overlay'
+            )
+            st.plotly_chart(fig_eng, use_container_width=True)
+            
+            # Second metric with mini chart
+            st.markdown(f"We've covered **{theme_coverage_count}** themes, or **{avg_themes_per_engagement}** themes per engagement.")
+            
+            # Create data for the stacked bar chart
+            stacked_bar_data = []
+            for theme in theme_cols:
+                theme_engagements = data[data[theme] == 'Y'] if theme in data.columns else pd.DataFrame()
+                if not theme_engagements.empty:
+                    cdp_theme_count = (theme_engagements['program'] == 'CDP').sum()
+                    other_theme_count = len(theme_engagements) - cdp_theme_count
+                    stacked_bar_data.append({
+                        'Theme': theme,
+                        'CDP': cdp_theme_count,
+                        'Other': other_theme_count,
+                        'Total': len(theme_engagements)
+                    })
 
+            fig_themes_stacked = go.Figure()
+            if stacked_bar_data:
+                stacked_df = pd.DataFrame(stacked_bar_data).sort_values(by='Total', ascending=True)
+                
+                fig_themes_stacked.add_trace(go.Bar(
+                    y=stacked_df['Theme'], x=stacked_df['Other'],
+                    name='Other Programs', orientation='h', marker_color=Config.CB_SAFE_PALETTE[1]
+                ))
+                fig_themes_stacked.add_trace(go.Bar(
+                    y=stacked_df['Theme'], x=stacked_df['CDP'],
+                    name='CDP Program', orientation='h', marker_color=Config.CB_SAFE_PALETTE[2]
+                ))
 
+            fig_themes_stacked.update_layout(
+                barmode='stack',
+                height=150,
+                margin=dict(l=0, r=0, t=20, b=5),
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
+                yaxis=dict(showgrid=False, showticklabels=True, automargin=True),
+                legend=dict(orientation="h", yanchor="top", y=1.2, xanchor="right", x=1, font=dict(size=10))
+            )
+            st.plotly_chart(fig_themes_stacked, use_container_width=True)
 
+            # Third metric
+            st.markdown(f"The majority of our engagements (**{cdp_percentage}%**) are CDP.")
+            
+            # CDP vs Direct bar chart
+            fig = go.Figure(data=[
+                go.Bar(
+                    x=['CDP', 'Direct'],
+                    y=[cdp_count, direct_count],
+                    text=[f'{cdp_percentage}%', f'{direct_percentage}%'],
+                    textposition='auto',
+                    marker_color=['#4682B4', '#fc8d62']
+                )
+            ])
+            
+            fig.update_layout(
+                height=150,
+                margin=dict(l=0, r=0, t=10, b=0),
+                showlegend=False,
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(showgrid=False),
+                yaxis=dict(showgrid=False, showticklabels=False)
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
 
-        render_icon_header(Config.HEADER_ICONS["table"], "Engagement Table")
+        with col2:
+            render_icon_header(Config.HEADER_ICONS["milestone"], "Milestone Progress", 40, 28, div_style="margin-top:0px;")
+            st.write(Config.CHART_CONTEXTS["milestone"])
+            if "milestone" in data.columns:
+                fig = create_chart(
+                    data["milestone"].value_counts(), 
+                    chart_type="bar", 
+                    height=530,
+                    margin={"l": 40, "r": 20, "t": 20, "b": 80}
+                )
+                fig.update_xaxes(tickangle=45)
+                st.plotly_chart(fig, use_container_width=True)
+
+        render_icon_header(Config.HEADER_ICONS["table"], "Engagement List")
         create_dataframe_component(data, Config.AGGRID_COLUMNS)
         cols = st.columns(6)
         with cols[-1]:
             csv = data.to_csv(index=False)
             st.download_button(
-                "📥 Download CSV",
+                "Download Table",
                 csv,
-                f"engagements_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                "text/csv"
+                f"filtered_engagements_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                "text/csv",
+                icon=":material/download:",
+                use_container_width=True,
             )
 
     with tab2:
-        context, chart = st.columns([1.5, 1])
-        with context:
-            render_icon_header(Config.HEADER_ICONS["esg"], "ESG Focus Distribution", 40, 28)
-            st.write("Distribution by ESG focus area. Shows count of active engagements.")
-            
-        with chart:
-            esg_data = pd.Series({
-                "Environmental": data.get("e", pd.Series()).sum(),
-                "Social": data.get("s", pd.Series()).sum(),
-                "Governance": data.get("g", pd.Series()).sum()
-            })
-            if esg_data.sum() > 0:
-                fig = create_chart(esg_data, chart_type="pie")
-                st.plotly_chart(fig, use_container_width=True)
-
-        if "gics_sector" in data.columns:
-            context, chart = st.columns([1, 2])
-            with context:
-                render_icon_header(Config.HEADER_ICONS["sector"], "Sector Distribution", 40, 28)
-                st.write(Config.CHART_CONTEXTS["sector"])
-            with chart:
-                fig = create_chart(data["gics_sector"].value_counts(), chart_type="bar")
-                st.plotly_chart(fig, use_container_width=True)
-
-    with tab3:
         render_icon_header(Config.HEADER_ICONS["region"], "Geographical Analysis", 40, 28)
         
         regions = ["Global"] + sorted(data["region"].unique()) if "region" in data.columns else ["Global"]
         selected = st.selectbox("Select to Focus on Region", regions, key="geo_region")
         
         geo_df = data if selected == "Global" else data[data["region"] == selected]
+        
+        # Calculate active engagements for the selected region
+        excluded = ["not started", "verified", "success", "cancelled"]
+        active = (~data["milestone"].str.lower().isin(excluded)).sum() if "milestone" in data.columns else 0
 
         col1, col2 = st.columns([1, 3])
 
@@ -359,7 +371,6 @@ def dashboard():
                         oceancolor='rgb(230,235,240)',
                     )
                     
-                    # Use fitbounds for regions not supported by Plotly scopes
                     if selected in ["Oceania", "Africa"] or (selected not in scope_mapping):
                         geo_config["fitbounds"] = "locations"
                     else:
@@ -391,7 +402,7 @@ def dashboard():
                 if "country" in geo_df.columns and not geo_df["country"].dropna().empty:
                     chart_data = geo_df["country"].value_counts()
             
-            st.markdown(f"#### {chart_title}")
+            render_icon_header("pie_chart", chart_title, 24, 20)
             if chart_data is not None and not chart_data.empty:
                 fig = go.Figure(go.Pie(
                     labels=chart_data.index,
@@ -423,11 +434,9 @@ def dashboard():
                 st.info("No data to display for this selection.")
                 
         with col2:
-            st.markdown("#### ESG Themes")
-            st.markdown("")
-            st.markdown("")
-            st.markdown("")
-            theme_cols = ["Climate Change", "Water", "Forests", "Other"]
+            render_icon_header("eco", "ESG Themes", 24, 20)
+            
+            # ESG Themes section
             theme_data = {}
             
             for theme in theme_cols:
@@ -439,7 +448,7 @@ def dashboard():
             
             total_themes = sum(theme_data.values())
             
-            # Always show theme gauges, even if zero
+            # Create gauges in a consistent manner
             for row_idx in range(0, len(theme_cols), 2):
                 gauge_cols = st.columns(2)
                 
@@ -450,58 +459,85 @@ def dashboard():
                         count = theme_data[theme]
                         
                         with gauge_cols[col_idx]:
-                            percentage = round((count / total_themes) * 100) if total_themes > 0 else 0
+                            # Force integer values for consistency
+                            count = int(count)
+                            percentage = int(round((count / total_themes) * 100)) if total_themes > 0 else 0
                             color = Config.ESG_COLORS[theme]
                             
                             option = create_esg_gauge(theme, count, color, percentage)
-                            option["series"][0]["detail"]["formatter"] = str(count)
-                            option["series"][0]["data"][0]["value"] = percentage
-                            option["series"][0]["radius"] = "110%"
-                            option["series"][0]["center"] = ["50%", "65%"]
                             
-                            st_echarts(options=option, height="180px", key=f"geo-theme-{selected}-{theme}-{st.session_state.get('refresh_counter', 0)}")
+                            # Sanitize the 'selected' string for the key to make it more robust
+                            safe_key_region = selected.replace(" ", "_")
+                            st_echarts(
+                                options=option, 
+                                height="200px", 
+                                key=f"geo_gauge_{safe_key_region}_{theme.replace(' ', '_')}"
+                            )
             
         if not geo_df.empty:
-            pass
-        else:
-            st.info("No geographic data to display.")
-        col1, col2 = st.columns([1.14, 1])
-        with col1:
-            if selected != "Global":
-                region_df = data[data["region"] == selected]
-                total = len(region_df)
-                avg = int(data.groupby("region").size().mean())
-                compare = "Higher" if total > avg else "Lower" if total < avg else "Equal to"
-                st.info(f"{selected} has {total} companies targeted. That's {compare} than avg. ({avg})")
-        with col2:
-            st.warning(f"100% of {selected}'s engagements are currently Active.")
+            col1, col2 = st.columns([1.14, 1])
+            with col1:
+                if selected != "Global":
+                    region_df = data[data["region"] == selected]
+                    total = len(region_df)
+                    avg = int(data.groupby("region").size().mean())
+                    compare = "higher" if total > avg else "lower" if total < avg else "equal to"
+                    st.info(f"{selected} has {total} companies targeted. That's {compare} than average ({avg}).")
+            with col2:
+                # Calculate active percentage for selected region
+                excluded = ["not started", "verified", "success", "cancelled"]
+                active_in_region = (~geo_df["milestone"].str.lower().isin(excluded)).sum() if "milestone" in geo_df.columns else 0
+                active_pct = round(active_in_region / len(geo_df) * 100) if len(geo_df) > 0 else 0
+                st.warning(f"{active_pct}% of {selected}'s engagements are currently Active.")
+
+        render_icon_header(Config.HEADER_ICONS["sector"], "Sector Distribution", 40, 28)
+        if "gics_sector" in data.columns:
+            context, chart = st.columns([1, 2])
+            with context:
+                st.write(Config.CHART_CONTEXTS["sector"])
+            with chart:
+                fig = create_chart(data["gics_sector"].value_counts(), chart_type="bar")
+                st.plotly_chart(fig, use_container_width=True)
       
-    with tab4:
-        st.subheader("Engagement Status")
-        analytics = get_engagement_analytics(data)
-        
-        if not analytics["monthly_trends"].empty:
-            fig = go.Figure(go.Scatter(
-                x=analytics["monthly_trends"]["month"],
-                y=analytics["monthly_trends"]["new_engagements"],
-                mode='lines+markers',
-                line=dict(color=Config.CB_SAFE_PALETTE[0], width=3),
-                marker=dict(size=8, color=Config.CB_SAFE_PALETTE[0])
-            ))
-            fig.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                hovermode='x unified',
-                xaxis_title="",
-                yaxis_title=""
-            )
-            st.plotly_chart(fig, use_container_width=True)
+    with tab3:
+        render_icon_header("business", "Company Analysis", 32, 28)
+        full_df = st.session_state['FULL_DATA']
+        filtered_df = st.session_state['DATA']
+
+        company = company_selector_widget(full_df, filtered_df)
+        if not company:
+            return
+
+        data = full_df[full_df["company_name"] == company].iloc[0]
+
+        with st.container(border=True):
+            render_icon_header("apartment", f"Company Snapshot: {data['company_name']}", 32, 28)
+            cols = st.columns(3)
+            cols[0].markdown(f"**Sector:** {data.get('gics_sector', 'N/A')}")
+            cols[1].markdown(f"**Region:** {data.get('region', 'N/A')}")
+            cols[2].markdown(f"**Country:** {data.get('country', 'N/A')}")
+            render_hr(0, 0)
+
+        with st.container(border=True):
+            render_icon_header("camera_alt", "Engagement Snapshot", 38, 28)
+            cols = st.columns(3)
+            cols[0].markdown(f"**Program:** {data.get('program', 'N/A')}")
+            cols[1].markdown(f"**Objective:** {data.get('objective', 'N/A')}")
+            cols[2].markdown(f"**Health:** {data.get('milestone_status', 'N/A')}")
+
+        render_hr(10, 10)
+        render_icon_header("history", "Interaction History")
+        display_interaction_history(data['engagement_id'])
+        render_hr(10, 10)
 
 def engagement_operations():
-    tab1, tab2 = st.tabs(["➕ Create Engagement", "📝 Log Interaction"])
+    tab1, tab2 = st.tabs([
+        f":material/add_business: Create Engagement",
+        f":material/edit_note: Log Interaction"
+    ])
     
     with tab1:
-        st.markdown('### Log New Engagement Target')
+        render_icon_header("add_business", "Log New Engagement Target", 32, 28)
         
         with st.form("new_engagement", clear_on_submit=False):
             col1, col2 = st.columns(2)
@@ -522,10 +558,10 @@ def engagement_operations():
             
             objective = st.selectbox("Objective", [""] + get_lookup_values("objective"))
 
-            st.markdown("### ESG Focus Areas *")
+            render_icon_header("eco", "ESG Focus Areas *", 24, 20)
             esg = get_esg_selection()
 
-            st.markdown("### Timeline")
+            render_icon_header("schedule", "Timeline", 24, 20)
             col1, col2 = st.columns(2)
             start = col1.date_input("Start Date *", value=datetime.now().date())
             target = col2.date_input("Target Date", value=datetime.now().date() + timedelta(days=90))
@@ -573,7 +609,7 @@ def engagement_operations():
                             st.error(msg)
 
     with tab2:
-        st.markdown("### Log Interaction")
+        render_icon_header("edit_note", "Log Interaction", 32, 28)
         company = company_selector_widget(st.session_state['FULL_DATA'], st.session_state['DATA'])
         
         if not company:
@@ -589,7 +625,7 @@ def engagement_operations():
             cols[2].markdown(f"**Escalation**<br>{eng.get('escalation_level', 'N/A')}", unsafe_allow_html=True)
 
         with st.form("log_interaction", clear_on_submit=False):
-            st.markdown("### Interaction Details")
+            render_icon_header("description", "Interaction Details", 24, 20)
             col1, col2 = st.columns(2)
             int_type = col1.selectbox("Type *", [""] + get_lookup_values("interaction_type"))
             int_date = col2.date_input("Date *", value=datetime.now().date())
@@ -603,7 +639,7 @@ def engagement_operations():
 
             summary = st.text_area("Summary *", height=150)
             
-            st.markdown("### Milestone Update (Optional)")
+            render_icon_header("flag", "Milestone Update (Optional)", 24, 20)
             col1, col2 = st.columns(2)
             
             mile_opts = get_lookup_values("milestone")
@@ -638,85 +674,33 @@ def engagement_operations():
                         st.error(msg)
 
 def task_management():
-    df = st.session_state['DATA']
+    df = st.session_state.get('DATA', pd.DataFrame())
+
+    if df.empty or 'next_action_date' not in df.columns:
+        st.warning("No tasks with upcoming dates are available for the current filter selection.")
+        return
     
-    if df.empty:
-        st.warning("No tasks available")
+    tasks_df = df.dropna(subset=['next_action_date']).copy()
+    
+    if tasks_df.empty:
+        st.info("No engagements with a 'Next Action Date' to display on the calendar.")
         return
-
-    upcoming = get_upcoming_tasks(df, Config.UPCOMING_DAYS)
-    urgent = upcoming[upcoming['days_to_next_action'] <= Config.URGENT_DAYS]
-    warning = upcoming[upcoming['days_to_next_action'].between(Config.URGENT_DAYS + 1, Config.WARNING_DAYS)]
-
-    render_metrics([
-        (f"Urgent (≤{Config.URGENT_DAYS} days)", len(urgent)),
-        (f"Warning (≤{Config.WARNING_DAYS} days)", len(warning)),
-        (f"Upcoming (≤{Config.UPCOMING_DAYS} days)", len(upcoming))
-    ])
-
-    if len(df) < len(st.session_state['FULL_DATA']):
-        st.info("Tasks filtered to match current criteria")
-
-    tabs = st.tabs(["🚨 Urgent", "⚠️ This Week", "📅 Upcoming"])
-    today = datetime.now().date()
-
-    for tab, tasks, label in zip(tabs, [urgent, warning, upcoming], ["Urgent", "This Week", "Upcoming"]):
-        with tab:
-            if not tasks.empty:
-                for _, task in tasks.iterrows():
-                    with st.container():
-                        col1, col2, col3 = st.columns([3, 2, 1])
-                        col1.markdown(f"**{task['company_name']}**")
-                        col1.caption(f"Milestone: {task.get('milestone', 'N/A')}")
-                        with col2:
-                            handle_task_date_display(task['next_action_date'], today)
-                        if col3.button("Complete", key=f"task_{task['engagement_id']}"):
-                            success, msg = update_milestone_status(task['engagement_id'], "Complete")
-                            if success:
-                                st.success(msg)
-                                refresh_data()
-                                st.rerun()
-                            else:
-                                st.error(msg)
-                        render_hr(margin_top=4, margin_bottom=8)
-            else:
-                st.info(f"No {label.lower()} tasks! 🎉")
-
-def company_deep_dive():
-    full_df = st.session_state['FULL_DATA']
-    filtered_df = st.session_state['DATA']
-
-    company = company_selector_widget(full_df, filtered_df)
-    if not company:
-        return
-
-    data = full_df[full_df["company_name"] == company].iloc[0]
-
-    with st.container(border=True):
-        render_icon_header("apartment", f"Company Snapshot: {data['company_name']}", 32, 28)
-        cols = st.columns(3)
-        cols[0].markdown(f"**Sector:** {data.get('gics_sector', 'N/A')}")
-        cols[1].markdown(f"**Region:** {data.get('region', 'N/A')}")
-        cols[2].markdown(f"**Country:** {data.get('country', 'N/A')}")
-        render_hr(0, 0)
-
-    with st.container(border=True):
-        render_icon_header("camera_alt", "Engagement Snapshot", 38, 28)
-        cols = st.columns(3)
-        cols[0].markdown(f"**Program:** {data.get('program', 'N/A')}")
-        cols[1].markdown(f"**Objective:** {data.get('objective', 'N/A')}")
-        cols[2].markdown(f"**Health:** {data.get('milestone_status', 'N/A')}")
-
-    render_hr(10, 10)
-    render_icon_header("history", "Interaction History")
-    display_interaction_history(data['engagement_id'])
-    render_hr(10, 10)
+    
+    calendar_events, resources = df_to_calendar_events(tasks_df)
+    
+    render_icon_header("calendar_month", "Multi-Month Calendar View", 32, 28)
+    
+    calendar(
+        events=calendar_events,
+        custom_css=CALENDAR_STYLES,
+        key="calendar_multi_month_view",
+        options=CALENDAR_OPTIONS,
+    )
 
 PAGE_FUNCTIONS = {
     "dashboard": dashboard,
     "engagement_management": engagement_operations,
     "task_management": task_management,
-    "company_deep_dive": company_deep_dive,
 }
 
 def navigation():
@@ -762,7 +746,6 @@ def navigation():
             st.session_state['DATA'] = st.session_state['FULL_DATA'].copy()
 
 def main():
-    # Initialize session state
     if 'selected_page' not in st.session_state:
         st.session_state.selected_page = 'Dashboard'
     
@@ -772,6 +755,7 @@ def main():
     
     render_icon_header(Config.HEADER_ICONS["app_title"], Config.APP_TITLE, 32, 32)
     st.markdown('<div style="margin-top:-33px;"></div>', unsafe_allow_html=True)
+    
     render_hr()
     
     if st.session_state.FULL_DATA.empty:
