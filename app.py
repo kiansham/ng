@@ -492,12 +492,9 @@ def dashboard():
 
         render_icon_header(Config.HEADER_ICONS["sector"], "Sector Distribution", 40, 28)
         if "gics_sector" in data.columns:
-            context, chart = st.columns([1, 2])
-            with context:
-                st.write(Config.CHART_CONTEXTS["sector"])
-            with chart:
-                fig = create_chart(data["gics_sector"].value_counts(), chart_type="bar")
-                st.plotly_chart(fig, use_container_width=True)
+            st.write(Config.CHART_CONTEXTS["sector"])
+            fig = create_chart(data["gics_sector"].value_counts(), chart_type="bar")
+            st.plotly_chart(fig, use_container_width=True)
       
     with tab3:
         render_icon_header("business", "Company Analysis", 32, 28)
@@ -755,7 +752,7 @@ def main():
     
     render_icon_header(Config.HEADER_ICONS["app_title"], Config.APP_TITLE, 32, 32)
     st.markdown('<div style="margin-top:-33px;"></div>', unsafe_allow_html=True)
-    
+
     render_hr()
     
     if st.session_state.FULL_DATA.empty:
