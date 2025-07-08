@@ -1,5 +1,3 @@
-from __future__ import annotations
-from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -72,11 +70,9 @@ def sidebar_filters(df):
 
 def dashboard():
     data = st.session_state['DATA']
-    
     if data.empty:
         st.warning("No engagement data available.")
         return
-
     today = pd.Timestamp.now().normalize()
     days_ahead = (pd.to_datetime(data.get("next_action_date")) - today).dt.days
     week_tasks = data[days_ahead.between(0, 6)]
@@ -90,18 +86,14 @@ def dashboard():
         col2.markdown(f'<div class="alert-warning"><strong>🗓️ {len(month_tasks)} Meetings This Month</strong><br>Within 30 days</div>', unsafe_allow_html=True)
 
         render_icon_header(Config.HEADER_ICONS["metrics"], "Key Metrics")
-        
         total = len(data)
         excluded = ["not started", "verified", "success", "cancelled"]
         active = (~data["milestone"].str.lower().isin(excluded)).sum() if "milestone" in data.columns else 0
-        
         completed_list = ["success", "full disclosure", "partial disclosure", "verified"]
         completed = data["milestone"].str.lower().isin(completed_list).sum() if "milestone" in data.columns else 0
-        
         success_list = ["Success", "Full Disclosure", "Partial Disclosure", "Verified"]
         success = data["milestone"].isin(success_list).sum() if "milestone" in data.columns else 0
         success_rate = round(success / total * 100) if total > 0 else 0
-        
         not_started = data["milestone"].str.lower().eq("not started").sum() if "milestone" in data.columns else 0
         failed = data["milestone"].str.lower().eq("cancelled").sum() if "milestone" in data.columns else 0
         fail_rate = round(failed / total * 100) if total > 0 else 0
@@ -120,8 +112,9 @@ def dashboard():
             
         with col3:
             render_icon_header(Config.HEADER_ICONS["esg"], "ESG Engagement Focus Areas", div_style="margin-top:-57px;")
-            theme_data = {}
             
+            # Calculate theme data
+            theme_data = {}
             for theme in theme_cols:
                 if theme in data.columns:
                     count = (data[theme] == "Y").sum()
@@ -131,68 +124,68 @@ def dashboard():
             
             total_themes = sum(theme_data.values())
             
-            for row_idx in range(0, len(theme_cols), 2):
-                gauge_cols = st.columns(2)
+            # Force initialization check - trigger rerun if needed
+            if 'dashboard_charts_initialized' not in st.session_state:
+                st.session_state.dashboard_charts_initialized = False
+            
+            # Render charts with proper initialization
+            if st.session_state.get('app_initialized', False) and len(data) > 0:
+                for row_idx in range(0, len(theme_cols), 2):
+                    gauge_cols = st.columns(2)
+                    for col_idx in range(2):
+                        theme_idx = row_idx + col_idx
+                        if theme_idx < len(theme_cols):
+                            theme = theme_cols[theme_idx]
+                            count = theme_data[theme]
+                            with gauge_cols[col_idx]:
+                                count = int(count)
+                                percentage = int(round((count / total_themes) * 100)) if total_themes > 0 else 0
+                                color = Config.ESG_COLORS[theme]
+                                option = create_esg_gauge(theme, count, color, percentage)
+                                
+                                # Render chart with error handling
+                                try:
+                                    st_echarts(
+                                        options=option, 
+                                        height="200px", 
+                                        key=f"main_{theme.replace(' ', '_').lower()}"
+                                    )
+                                except Exception as e:
+                                    st.error(f"Chart rendering error for {theme}: {str(e)}")
                 
-                for col_idx in range(2):
-                    theme_idx = row_idx + col_idx
-                    if theme_idx < len(theme_cols):
-                        theme = theme_cols[theme_idx]
-                        count = theme_data[theme]
-                        
-                        with gauge_cols[col_idx]:
-                            # Force integer values for consistency
-                            count = int(count)
-                            percentage = int(round((count / total_themes) * 100)) if total_themes > 0 else 0
-                            color = Config.ESG_COLORS[theme]
-                            
-                            option = create_esg_gauge(theme, count, color, percentage)
-                            
-                                # Use stable key that doesn't change with data
-                            st_echarts(
-                            options=option, 
-                            height="200px", 
-                            key=f"main_gauge_{theme.replace(' ', '_')}"
-                        )
+                # Mark charts as initialized and force rerun if this is first time
+                if not st.session_state.dashboard_charts_initialized:
+                    st.session_state.dashboard_charts_initialized = True
+                    st.rerun()
+            else:
+                # Show loading placeholder
+                for row_idx in range(0, len(theme_cols), 2):
+                    gauge_cols = st.columns(2)
+                    for col_idx in range(2):
+                        theme_idx = row_idx + col_idx
+                        if theme_idx < len(theme_cols):
+                            theme = theme_cols[theme_idx]
+                            with gauge_cols[col_idx]:
+                                st.info(f"Loading {theme} chart...")
         
-        # Fixed insights section with proper calculations
         col1, col2 = st.columns([1, 1])
         with col1:
             render_icon_header("insights", "Insights", 40, 28)
-            
-            # Calculate theme coverage
             theme_coverage_count = sum(theme_data.values())
             avg_themes_per_engagement = round(theme_coverage_count / total, 2) if total > 0 else 0
-            
-            # Calculate CDP percentage
             cdp_count = (data["program"] == "CDP").sum() if "program" in data.columns else 0
             cdp_percentage = round(cdp_count / total * 100) if total > 0 else 0
             direct_count = total - cdp_count
             direct_percentage = 100 - cdp_percentage
-            
-            # First metric with mini chart
             st.markdown(f"We've currently begun **{total}** out of **22** engagements.")
-            
-            # Mini progress bar chart for engagements
             progress_pct = round((total / 22) * 100)
             fig_eng = go.Figure()
-            
-            # Add background bar
             fig_eng.add_trace(go.Bar(
-                x=[100],
-                y=['Progress'],
-                orientation='h',
-                marker=dict(color='#e0e0e0'),
-                showlegend=False,
-                hoverinfo='skip'
+                x=[100], y=['Progress'], orientation='h', marker=dict(color='#e0e0e0'),
+                showlegend=False, hoverinfo='skip'
             ))
-            
-            # Add progress bar
             fig_eng.add_trace(go.Bar(
-                x=[progress_pct],
-                y=['Progress'],
-                orientation='h',
-                marker=dict(color='#2E8B57'),
+                x=[progress_pct], y=['Progress'], orientation='h', marker=dict(color='#2E8B57'),
                 text=[f'{total}/22 ({progress_pct}%)'],
                 textposition='inside' if progress_pct > 30 else 'outside',
                 textfont=dict(color='white' if progress_pct > 30 else '#2E8B57'),
@@ -201,20 +194,13 @@ def dashboard():
             ))
             
             fig_eng.update_layout(
-                height=55,
-                margin=dict(l=0, r=0, t=0, b=0),
+                height=55, margin=dict(l=0, r=0, t=0, b=0),
                 xaxis=dict(showgrid=False, showticklabels=False, zeroline=False, range=[0, 100]),
                 yaxis=dict(showgrid=False, showticklabels=False),
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                barmode='overlay'
+                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', barmode='overlay'
             )
             st.plotly_chart(fig_eng, use_container_width=True)
-            
-            # Second metric with mini chart
             st.markdown(f"We've covered **{theme_coverage_count}** themes, or **{avg_themes_per_engagement}** themes per engagement.")
-            
-            # Create data for the stacked bar chart
             stacked_bar_data = []
             for theme in theme_cols:
                 theme_engagements = data[data[theme] == 'Y'] if theme in data.columns else pd.DataFrame()
@@ -222,16 +208,13 @@ def dashboard():
                     cdp_theme_count = (theme_engagements['program'] == 'CDP').sum()
                     other_theme_count = len(theme_engagements) - cdp_theme_count
                     stacked_bar_data.append({
-                        'Theme': theme,
-                        'CDP': cdp_theme_count,
-                        'Other': other_theme_count,
+                        'Theme': theme, 'CDP': cdp_theme_count, 'Other': other_theme_count,
                         'Total': len(theme_engagements)
                     })
 
             fig_themes_stacked = go.Figure()
             if stacked_bar_data:
                 stacked_df = pd.DataFrame(stacked_bar_data).sort_values(by='Total', ascending=True)
-                
                 fig_themes_stacked.add_trace(go.Bar(
                     y=stacked_df['Theme'], x=stacked_df['Other'],
                     name='Other Programs', orientation='h', marker_color=Config.CB_SAFE_PALETTE[1]
@@ -240,43 +223,28 @@ def dashboard():
                     y=stacked_df['Theme'], x=stacked_df['CDP'],
                     name='CDP Program', orientation='h', marker_color=Config.CB_SAFE_PALETTE[2]
                 ))
-
             fig_themes_stacked.update_layout(
-                barmode='stack',
-                height=150,
-                margin=dict(l=0, r=0, t=20, b=5),
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
+                barmode='stack', height=150, margin=dict(l=0, r=0, t=20, b=5),
+                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
                 xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
                 yaxis=dict(showgrid=False, showticklabels=True, automargin=True),
                 legend=dict(orientation="h", yanchor="top", y=1.2, xanchor="right", x=1, font=dict(size=10))
             )
             st.plotly_chart(fig_themes_stacked, use_container_width=True)
-
-            # Third metric
             st.markdown(f"The majority of our engagements (**{cdp_percentage}%**) are CDP.")
-            
-            # CDP vs Direct bar chart
             fig = go.Figure(data=[
                 go.Bar(
-                    x=['CDP', 'Direct'],
-                    y=[cdp_count, direct_count],
+                    x=['CDP', 'Direct'], y=[cdp_count, direct_count],
                     text=[f'{cdp_percentage}%', f'{direct_percentage}%'],
-                    textposition='auto',
-                    marker_color=['#4682B4', '#fc8d62']
+                    textposition='auto', marker_color=['#4682B4', '#fc8d62']
                 )
             ])
             
             fig.update_layout(
-                height=150,
-                margin=dict(l=0, r=0, t=10, b=0),
-                showlegend=False,
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                xaxis=dict(showgrid=False),
-                yaxis=dict(showgrid=False, showticklabels=False)
+                height=150, margin=dict(l=0, r=0, t=10, b=0), showlegend=False,
+                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(showgrid=False), yaxis=dict(showgrid=False, showticklabels=False)
             )
-            
             st.plotly_chart(fig, use_container_width=True)
 
         with col2:
@@ -284,9 +252,7 @@ def dashboard():
             st.write(Config.CHART_CONTEXTS["milestone"])
             if "milestone" in data.columns:
                 fig = create_chart(
-                    data["milestone"].value_counts(), 
-                    chart_type="bar", 
-                    height=530,
+                    data["milestone"].value_counts(), chart_type="bar", height=530,
                     margin={"l": 40, "r": 20, "t": 20, "b": 80}
                 )
                 fig.update_xaxes(tickangle=45)
@@ -310,7 +276,26 @@ def dashboard():
         render_icon_header(Config.HEADER_ICONS["region"], "Regional & Sector Analysis", 40, 28)
         
         regions = ["Global"] + sorted(data["region"].unique()) if "region" in data.columns else ["Global"]
-        selected = st.selectbox("Select to Focus on Region", regions, key="geo_region")
+        
+        # Initialize selected region in session state
+        if 'selected_region' not in st.session_state:
+            st.session_state.selected_region = "Global"
+        
+        # Ensure selected region is valid
+        if st.session_state.selected_region not in regions:
+            st.session_state.selected_region = "Global"
+            
+        selected_idx = regions.index(st.session_state.selected_region) if st.session_state.selected_region in regions else 0
+        selected = st.selectbox(
+            "Select to Focus on Region", 
+            regions, 
+            index=selected_idx,
+            key="geo_region_selector"
+        )
+        
+        # Update session state when selection changes
+        if selected != st.session_state.selected_region:
+            st.session_state.selected_region = selected
         
         geo_df = data if selected == "Global" else data[data["region"] == selected]
         
@@ -333,66 +318,40 @@ def dashboard():
                 country_data = geo_df.groupby("country").size().reset_index(name="count")
                 country_data['iso_code'] = country_data['country'].map(Config.COUNTRY_ISO_MAP)
                 mapped = country_data.dropna(subset=['iso_code'])
-                
                 if not mapped.empty:
                     fig = create_chart(
-                        mapped,
-                        chart_type="choropleth", 
-                        locations="iso_code",
-                        color="count",
-                        hover_name="country",
-                        color_continuous_scale="Viridis",
+                        mapped, chart_type="choropleth", locations="iso_code", color="count",
+                        hover_name="country", color_continuous_scale="Viridis",
                         range_color=[0, geo_df["country"].value_counts().max()]
                     )
                     
                     scope_mapping = {
-                        "Global": "world",
-                        "Asia": "asia",
-                        "Europe": "europe",
-                        "North America": "north america",
-                        "South America": "south america",
-                        "Oceania": "world",
-                        "Africa": "world",
+                        "Global": "world", "Asia": "asia", "Europe": "europe",
+                        "North America": "north america", "South America": "south america",
+                        "Oceania": "world", "Africa": "world",
                     }
-                    
                     geo_scope = scope_mapping.get(selected, "world")
-                    
                     geo_config = dict(
-                        bgcolor='rgba(0,0,0,0)',
-                        showframe=False,
-                        showcoastlines=True,
-                        coastlinecolor="rgba(68,68,68,0.15)",
-                        projection_type='equirectangular',
-                        showcountries=True,
-                        countrycolor="rgba(68,68,68,0.15)",
-                        showland=True,
-                        landcolor='rgb(243,243,243)',
-                        showocean=True,
-                        oceancolor='rgb(230,235,240)',
+                        bgcolor='rgba(0,0,0,0)', showframe=False, showcoastlines=True,
+                        coastlinecolor="rgba(68,68,68,0.15)", projection_type='equirectangular',
+                        showcountries=True, countrycolor="rgba(68,68,68,0.15)",
+                        showland=True, landcolor='rgb(243,243,243)',
+                        showocean=True, oceancolor='rgb(230,235,240)',
                     )
                     
                     if selected in ["Oceania", "Africa"] or (selected not in scope_mapping):
                         geo_config["fitbounds"] = "locations"
                     else:
                         geo_config["scope"] = geo_scope
-                    
-                    fig.update_layout(
-                        geo=geo_config,
-                        height=400,
-                        margin=dict(l=0, r=0, t=0, b=0)
-                    )
-                    
+                    fig.update_layout(geo=geo_config, height=400, margin=dict(l=0, r=0, t=0, b=0))
                     fig.update_coloraxes(colorbar=dict(thickness=5, len=0.7, x=1.02, xpad=10, y=0.5))
                     fig.update_traces(hovertemplate="<b>%{hovertext}</b><br>Engagements: %{z}<extra></extra>")
-                    
                     st.plotly_chart(fig, use_container_width=True)
         
         col1, col2 = st.columns([1, 1])
-        
         with col1:
             chart_data = None
             chart_title = ""
-
             if selected == "Global":
                 chart_title = "Regional Distribution"
                 if "region" in data.columns and not data["region"].dropna().empty:
@@ -401,34 +360,19 @@ def dashboard():
                 chart_title = f"Countries in {selected}"
                 if "country" in geo_df.columns and not geo_df["country"].dropna().empty:
                     chart_data = geo_df["country"].value_counts()
-            
             render_icon_header("pie_chart", chart_title, 24, 20)
             if chart_data is not None and not chart_data.empty:
                 fig = go.Figure(go.Pie(
-                    labels=chart_data.index,
-                    values=chart_data.values,
-                    hole=0.7,
-                    marker_colors=Config.CB_SAFE_PALETTE,
-                    textinfo='percent',
-                    hoverinfo='label+percent+value',
-                    textfont_size=14
+                    labels=chart_data.index, values=chart_data.values, hole=0.7,
+                    marker_colors=Config.CB_SAFE_PALETTE, textinfo='percent',
+                    hoverinfo='label+percent+value', textfont_size=14
                 ))
-
                 fig.update_layout(
-                    height=400,
-                    margin=dict(l=20, r=20, t=50, b=20),
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
+                    height=400, margin=dict(l=20, r=20, t=50, b=20),
+                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                     showlegend=True,
-                    legend=dict(
-                        orientation="h",
-                        yanchor="bottom",
-                        y=1.02,
-                        xanchor="center",
-                        x=0.5
-                    )
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5)
                 )
-
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("No data to display for this selection.")
@@ -436,9 +380,8 @@ def dashboard():
         with col2:
             render_icon_header("eco", "ESG Themes", 24, 20)
             
-            # ESG Themes section
+            # Calculate theme data for selected region
             theme_data = {}
-            
             for theme in theme_cols:
                 if theme in geo_df.columns:
                     count = (geo_df[theme] == "Y").sum()
@@ -448,31 +391,52 @@ def dashboard():
             
             total_themes = sum(theme_data.values())
             
-            # Create gauges in a consistent manner
-            for row_idx in range(0, len(theme_cols), 2):
-                gauge_cols = st.columns(2)
+            # Force initialization check for geo charts
+            geo_init_key = f"geo_charts_initialized_{selected.replace(' ', '_')}"
+            if geo_init_key not in st.session_state:
+                st.session_state[geo_init_key] = False
+            
+            # Render charts with proper initialization
+            if not geo_df.empty and st.session_state.get('app_initialized', False):
+                for row_idx in range(0, len(theme_cols), 2):
+                    gauge_cols = st.columns(2)
+                    for col_idx in range(2):
+                        theme_idx = row_idx + col_idx
+                        if theme_idx < len(theme_cols):
+                            theme = theme_cols[theme_idx]
+                            count = theme_data[theme]
+                            with gauge_cols[col_idx]:
+                                count = int(count)
+                                percentage = int(round((count / total_themes) * 100)) if total_themes > 0 else 0
+                                color = Config.ESG_COLORS[theme]
+                                option = create_esg_gauge(theme, count, color, percentage)
+                                
+                                # Render chart with error handling
+                                try:
+                                    st_echarts(
+                                        options=option, height="200px", 
+                                        key=f"geo_{theme.replace(' ', '_').lower()}"
+                                    )
+                                except Exception as e:
+                                    st.error(f"Geo chart rendering error for {theme}: {str(e)}")
                 
-                for col_idx in range(2):
-                    theme_idx = row_idx + col_idx
-                    if theme_idx < len(theme_cols):
-                        theme = theme_cols[theme_idx]
-                        count = theme_data[theme]
-                        
-                        with gauge_cols[col_idx]:
-                            # Force integer values for consistency
-                            count = int(count)
-                            percentage = int(round((count / total_themes) * 100)) if total_themes > 0 else 0
-                            color = Config.ESG_COLORS[theme]
-                            
-                            option = create_esg_gauge(theme, count, color, percentage)
-                            
-                            # Sanitize the 'selected' string for the key to make it more robust
-                            safe_key_region = selected.replace(" ", "_")
-                            st_echarts(
-                                options=option, 
-                                height="200px", 
-                                key=f"geo_gauge_{safe_key_region}_{theme.replace(' ', '_')}"
-                            )
+                # Mark charts as initialized and force rerun if this is first time for this region
+                if not st.session_state[geo_init_key]:
+                    st.session_state[geo_init_key] = True
+                    st.rerun()
+            else:
+                if geo_df.empty:
+                    st.info("No ESG theme data available for the selected region.")
+                else:
+                    # Show loading placeholder
+                    for row_idx in range(0, len(theme_cols), 2):
+                        gauge_cols = st.columns(2)
+                        for col_idx in range(2):
+                            theme_idx = row_idx + col_idx
+                            if theme_idx < len(theme_cols):
+                                theme = theme_cols[theme_idx]
+                                with gauge_cols[col_idx]:
+                                    st.info(f"Loading {theme} chart...")
             
         if not geo_df.empty:
             col1, col2 = st.columns([1.14, 1])
@@ -484,7 +448,6 @@ def dashboard():
                     compare = "higher" if total > avg else "lower" if total < avg else "equal to"
                     st.info(f"{selected} has {total} companies targeted. That's {compare} than average ({avg}).")
             with col2:
-                # Calculate active percentage for selected region
                 excluded = ["not started", "verified", "success", "cancelled"]
                 active_in_region = (~geo_df["milestone"].str.lower().isin(excluded)).sum() if "milestone" in geo_df.columns else 0
                 active_pct = round(active_in_region / len(geo_df) * 100) if len(geo_df) > 0 else 0
@@ -673,26 +636,18 @@ def engagement_operations():
         render_hr(10, 10)
 def task_management():
     df = st.session_state.get('DATA', pd.DataFrame())
-
     if df.empty or 'next_action_date' not in df.columns:
         st.warning("No tasks with upcoming dates are available for the current filter selection.")
         return
-    
     tasks_df = df.dropna(subset=['next_action_date']).copy()
-    
     if tasks_df.empty:
         st.info("No engagements with a 'Next Action Date' to display on the calendar.")
         return
-    
     calendar_events, resources = df_to_calendar_events(tasks_df)
-    
     render_icon_header("calendar_month", "Multi-Month Calendar View", 32, 28)
-    
     calendar(
-        events=calendar_events,
-        custom_css=CALENDAR_STYLES,
-        key="calendar_multi_month_view",
-        options=CALENDAR_OPTIONS,
+        events=calendar_events, custom_css=CALENDAR_STYLES,
+        key="calendar_multi_month_view", options=CALENDAR_OPTIONS,
     )
 
 PAGE_FUNCTIONS = {
@@ -706,23 +661,14 @@ def navigation():
         st.markdown(" ")
         titles = [k for k in PAGES_CONFIG.keys() if k != "Analytics"]
         icons = [PAGES_CONFIG[p]['icon'] for p in titles]
-        
         idx = titles.index(st.session_state.selected_page) if st.session_state.selected_page in titles else 0
-            
         selected = option_menu(
-            "Navigation", titles,
-            icons=icons,
-            menu_icon="cast", 
-            default_index=idx,
-            styles=NAV_STYLES,
-            key="main_navigation"
+            "Navigation", titles, icons=icons, menu_icon="cast", 
+            default_index=idx, styles=NAV_STYLES, key="main_navigation"
         )
-        
         if selected != st.session_state.selected_page:
             st.session_state.selected_page = selected
-
         render_hr(0, 0)
-
         col1, col2 = st.columns([5, 2.5])
         with col1:
             st.markdown(
@@ -734,9 +680,7 @@ def navigation():
             )
         with col2:
             filtering = st.toggle("", value=False, key="enable_filtering")
-
         render_hr(0, 8)
-        
         if filtering:
             filters = sidebar_filters(st.session_state['FULL_DATA'])
             st.session_state['DATA'] = apply_filters(st.session_state['FULL_DATA'], filters)
@@ -744,34 +688,41 @@ def navigation():
             st.session_state['DATA'] = st.session_state['FULL_DATA'].copy()
 
 def main():
+    # Initialize core session state variables
     if 'selected_page' not in st.session_state:
         st.session_state.selected_page = 'Dashboard'
+    if 'app_initialized' not in st.session_state:
+        st.session_state.app_initialized = False
     
+    # Load data if not available
     if 'validator' not in st.session_state or 'FULL_DATA' not in st.session_state:
-        with st.spinner('Loading...'):
+        with st.spinner('Loading application data...'):
             refresh_data()
+            # Mark as initialized after data load
+            st.session_state.app_initialized = True
+            # Force a rerun to ensure proper chart initialization
+            if not st.session_state.get('initial_rerun_done', False):
+                st.session_state.initial_rerun_done = True
+                st.rerun()
     
     render_icon_header(Config.HEADER_ICONS["app_title"], Config.APP_TITLE, 32, 32)
     st.markdown('<div style="margin-top:-33px;"></div>', unsafe_allow_html=True)
-
     render_hr()
     
     if st.session_state.FULL_DATA.empty:
         st.warning("No data found. Add an engagement to begin.")
         engagement_operations()
         return
-
+        
     try:
         navigation()
-        
         page_name = PAGES_CONFIG[st.session_state.selected_page]['function']
         page_func = PAGE_FUNCTIONS[page_name]
         page_func()
-
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Application error: {e}")
         st.exception(e)
-        if st.button("Clear Cache"):
+        if st.button("Reset Application"):
             st.cache_data.clear()
             for key in list(st.session_state.keys()):
                 del st.session_state[key]

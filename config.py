@@ -24,10 +24,8 @@ class Config:
         "Other": "#FF6B6B"
     }
     
-    # Task urgency thresholds (days)
     URGENT_DAYS = 3
     WARNING_DAYS = 7
-    UPCOMING_DAYS = 14
     
     # Default chart configurations
     CHART_DEFAULTS = {
@@ -91,16 +89,7 @@ class Config:
         "timeline": "timeline"
     }
     
-    # AgGrid configuration defaults
-    AGGRID_CONFIG = {
-        "default_col_width": 150,
-        "date_format": "%m/%d/%Y",
-        "pagination_size": 20,
-        "row_height": 32,
-        "header_height": 56,
-        "min_rows_for_pagination": 5,
-        "default_height": 350
-    }
+
     
     # Column display configuration
     AGGRID_COLUMN_HEADERS = {
@@ -111,49 +100,22 @@ class Config:
         'target_date': 'Completion Date'
     }
     
-    # Column width configuration
-    AGGRID_COLUMN_WIDTHS = {
-        'company_name': (150, 400),
-        'theme': (150, 400),
-        'interaction_summary': (150, 400),
-        'objective': (150, 400),
-        'aqr_id': (80, 180),
-        'country': (80, 180),
-        'region': (80, 180),
-        'gics_sector': (80, 180),
-        'program': (80, 180),
-        'milestone': (80, 180),
-        'milestone_status': (80, 180)
-    }
+
     
-    # AG Grid column configuration for dashboard table
     AGGRID_COLUMNS = [
-        "company_name",
-        "aqr_id",
-        "country",
-        "region",
-        "gics_sector",
-        "program",
-        "theme",
-        "milestone",
-        "last_interaction_date",
-        "next_action_date",
-        "target_date"
+        "company_name", "aqr_id", "country", "region", "gics_sector", "program",
+        "theme", "milestone", "last_interaction_date", "next_action_date", "target_date"
     ]
 
-# Page and navigation configuration
 PAGES_CONFIG = {
     "Dashboard": {"icon": "speedometer2", "function": "dashboard"},
     "Engagement Log": {"icon": "folder-plus", "function": "engagement_management"},
     "Calendar": {"icon": "list-check", "function": "task_management"},
 }
 
-# CSS styles
-CSS_STYLES = """
+ENHANCED_CSS = """
 <style>
-    .stApp {
-        background-color: #f8f9fa;
-    }
+    .stApp { background-color: #f8f9fa; }
     .alert-urgent { 
         background-color: #ffe6e6; border-left: 4px solid #e74c3c; 
         padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; 
@@ -166,46 +128,22 @@ CSS_STYLES = """
         background-color: #fee; border-left: 4px solid #c00; 
         padding: 0.5rem; border-radius: 0.25rem; margin: 0.5rem 0; 
     }
-</style>
-"""
-
-# Enhanced CSS styles
-ENHANCED_CSS = CSS_STYLES + """
-<style>
     div[data-testid="metric-container"] {
-        background-color: #ffffff;
-        border: 1px solid #e9ecef;
-        padding: 16px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background-color: #ffffff; border: 1px solid #e9ecef; padding: 16px;
+        border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         transition: all 0.3s ease;
     }
-    
     div[data-testid="metric-container"]:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); transform: translateY(-1px);
     }
-    
     .chart-title {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #262730;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #f0f2f6;
+        font-size: 1.2rem; font-weight: 600; color: #262730; margin-bottom: 1rem;
+        padding-bottom: 0.5rem; border-bottom: 2px solid #f0f2f6;
     }
-    
     .sidebar-section {
-        background-color: #f8f9fa;
-        padding: 10px;
-        border-radius: 8px;
-        margin-bottom: 10px;
+        background-color: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px;
     }
-    
-    .streamlit-expander {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-    }
+    .streamlit-expander { border: 1px solid #e0e0e0; border-radius: 8px; }
 </style>
 """
 
@@ -219,73 +157,36 @@ NAV_STYLES = {
     "nav-link-selected": {"background-color": Config.COLORS["primary"]},
 }
 
-# Chart layout configurations
 CHART_CONFIGS = {
     "bar": {
-        "height": 400,
-        "yaxis": {"tickformat": "d"},
-        "margin": {"l": 50, "r": 20, "t": 60, "b": 50},
-        "showlegend": False
+        "height": 400, "yaxis": {"tickformat": "d"},
+        "margin": {"l": 50, "r": 20, "t": 60, "b": 50}, "showlegend": False
     },
     "status": {
-        "height": 140,
-        "barmode": "stack",
-        "margin": {"l": 10, "r": 10, "t": 40, "b": 10},
-        "showlegend": True,
-        "xaxis": {"tickformat": "d"}
+        "height": 140, "barmode": "stack", "margin": {"l": 10, "r": 10, "t": 40, "b": 10},
+        "showlegend": True, "xaxis": {"tickformat": "d"}
     },
-    "geographic": {
-        "height": 700,
-        "margin": {"l": 0, "r": 0, "t": 0, "b": 0},
-    }
+    "geographic": {"height": 700, "margin": {"l": 0, "r": 0, "t": 0, "b": 0}},
 }
 
-# Calendar view configurations
 CALENDAR_OPTIONS = {
-    "height": "600px",
-    "initialView": "dayGridMonth",
+    "height": "600px", "initialView": "dayGridMonth",
     "headerToolbar": {
-        "left": "prev,next today",
-        "center": "title",
-        "right": "dayGridMonth,multiMonthYear"
+        "left": "prev,next today", "center": "title", "right": "dayGridMonth,multiMonthYear"
     }
 }
 
 CALENDAR_STYLES = f"""
     .fc-button {{
-        background-color: {Config.COLORS['primary']};
-        color: white !important;
-        border: none !important;
-        border-radius: 0.4rem !important;
-        padding: 0.25rem 0.75rem !important;
-        font-weight: 500 !important;
-        font-size: 0.9rem !important;
-        transition: background-color 0.3s ease;
-        text-transform: capitalize;
+        background-color: {Config.COLORS['primary']}; color: white !important; border: none !important;
+        border-radius: 0.4rem !important; padding: 0.25rem 0.75rem !important; font-weight: 500 !important;
+        font-size: 0.9rem !important; transition: background-color 0.3s ease; text-transform: capitalize;
     }}
-    .fc-button:hover {{
-        background-color: #2980b9 !important;
-    }}
-    .fc-button-primary:disabled {{
-        background-color: #a9a9a9 !important;
-        color: #e0e0e0 !important;
-    }}
-    .fc-button-active {{
-        background-color: #2980b9 !important;
-    }}
-    .fc-toolbar-title {{
-        font-size: 1.5rem;
-    }}
-    .event-urgent {{
-        background-color: {Config.COLORS['danger']} !important;
-        border-color: #c0392b !important;
-    }}
-    .event-warning {{
-        background-color: {Config.COLORS['warning']} !important;
-        border-color: #d68910 !important;
-    }}
-    .event-upcoming {{
-        background-color: {Config.COLORS['primary']} !important;
-        border-color: #2980b9 !important;
-    }}
+    .fc-button:hover {{ background-color: #2980b9 !important; }}
+    .fc-button-primary:disabled {{ background-color: #a9a9a9 !important; color: #e0e0e0 !important; }}
+    .fc-button-active {{ background-color: #2980b9 !important; }}
+    .fc-toolbar-title {{ font-size: 1.5rem; }}
+    .event-urgent {{ background-color: {Config.COLORS['danger']} !important; border-color: #c0392b !important; }}
+    .event-warning {{ background-color: {Config.COLORS['warning']} !important; border-color: #d68910 !important; }}
+    .event-upcoming {{ background-color: {Config.COLORS['primary']} !important; border-color: #2980b9 !important; }}
 """
