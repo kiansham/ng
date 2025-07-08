@@ -1,8 +1,7 @@
 streamlit
 pandas
 plotly
-streamlit-shadcn-ui
-streamlit-tile
+streamlit-calendar
 streamlit-plotly-events
 streamlit-option-menu
 streamlit-echarts
