@@ -124,49 +124,28 @@ def dashboard():
             
             total_themes = sum(theme_data.values())
             
-            # Force initialization check - trigger rerun if needed
-            if 'dashboard_charts_initialized' not in st.session_state:
-                st.session_state.dashboard_charts_initialized = False
-            
-            # Render charts with proper initialization
-            if st.session_state.get('app_initialized', False) and len(data) > 0:
-                for row_idx in range(0, len(theme_cols), 2):
-                    gauge_cols = st.columns(2)
-                    for col_idx in range(2):
-                        theme_idx = row_idx + col_idx
-                        if theme_idx < len(theme_cols):
-                            theme = theme_cols[theme_idx]
-                            count = theme_data[theme]
-                            with gauge_cols[col_idx]:
-                                count = int(count)
-                                percentage = int(round((count / total_themes) * 100)) if total_themes > 0 else 0
-                                color = Config.ESG_COLORS[theme]
-                                option = create_esg_gauge(theme, count, color, percentage)
-                                
-                                # Render chart with error handling
-                                try:
-                                    st_echarts(
-                                        options=option, 
-                                        height="200px", 
-                                        key=f"main_{theme.replace(' ', '_').lower()}"
-                                    )
-                                except Exception as e:
-                                    st.error(f"Chart rendering error for {theme}: {str(e)}")
-                
-                # Mark charts as initialized and force rerun if this is first time
-                if not st.session_state.dashboard_charts_initialized:
-                    st.session_state.dashboard_charts_initialized = True
-                    st.rerun()
-            else:
-                # Show loading placeholder
-                for row_idx in range(0, len(theme_cols), 2):
-                    gauge_cols = st.columns(2)
-                    for col_idx in range(2):
-                        theme_idx = row_idx + col_idx
-                        if theme_idx < len(theme_cols):
-                            theme = theme_cols[theme_idx]
-                            with gauge_cols[col_idx]:
-                                st.info(f"Loading {theme} chart...")
+            # Simple chart rendering without complex initialization logic
+            for row_idx in range(0, len(theme_cols), 2):
+                gauge_cols = st.columns(2)
+                for col_idx in range(2):
+                    theme_idx = row_idx + col_idx
+                    if theme_idx < len(theme_cols):
+                        theme = theme_cols[theme_idx]
+                        count = theme_data[theme]
+                        with gauge_cols[col_idx]:
+                            count = int(count)
+                            percentage = int(round((count / total_themes) * 100)) if total_themes > 0 else 0
+                            color = Config.ESG_COLORS[theme]
+                            option = create_esg_gauge(theme, count, color, percentage)
+                            
+                            # Use a container to ensure proper rendering
+                            chart_container = st.container()
+                            with chart_container:
+                                st_echarts(
+                                    options=option, 
+                                    height="200px", 
+                                    key=f"dashboard_{theme.replace(' ', '_').lower()}_{st.session_state.get('refresh_counter', 0)}"
+                                )
         
         col1, col2 = st.columns([1, 1])
         with col1:
@@ -309,156 +288,285 @@ def dashboard():
             if not geo_df.empty:
                 render_geo_metrics(
                     len(geo_df),
-                    geo_df["country"].nunique(),
-                    geo_df["country"].mode()[0] if not geo_df["country"].empty else "N/A"
+                    geo_df["country"].nunique() if "country" in geo_df.columns else 0,
+                    geo_df["country"].mode()[0] if "country" in geo_df.columns and not geo_df["country"].empty else "N/A"
                 )
+            else:
+                st.info("No data available for selected region.")
 
         with col2:
-            if not geo_df.empty and "country" in geo_df.columns:
-                country_data = geo_df.groupby("country").size().reset_index(name="count")
-                country_data['iso_code'] = country_data['country'].map(Config.COUNTRY_ISO_MAP)
-                mapped = country_data.dropna(subset=['iso_code'])
-                if not mapped.empty:
-                    fig = create_chart(
-                        mapped, chart_type="choropleth", locations="iso_code", color="count",
-                        hover_name="country", color_continuous_scale="Viridis",
-                        range_color=[0, geo_df["country"].value_counts().max()]
-                    )
+            if not geo_df.empty and "country" in geo_df.columns and not geo_df["country"].dropna().empty:
+                try:
+                    # Prepare country data for choropleth
+                    country_data = geo_df.groupby("country").size().reset_index(name="count")
+                    country_data['iso_code'] = country_data['country'].map(Config.COUNTRY_ISO_MAP)
+                    mapped = country_data.dropna(subset=['iso_code'])
                     
-                    scope_mapping = {
-                        "Global": "world", "Asia": "asia", "Europe": "europe",
-                        "North America": "north america", "South America": "south america",
-                        "Oceania": "world", "Africa": "world",
-                    }
-                    geo_scope = scope_mapping.get(selected, "world")
-                    geo_config = dict(
-                        bgcolor='rgba(0,0,0,0)', showframe=False, showcoastlines=True,
-                        coastlinecolor="rgba(68,68,68,0.15)", projection_type='equirectangular',
-                        showcountries=True, countrycolor="rgba(68,68,68,0.15)",
-                        showland=True, landcolor='rgb(243,243,243)',
-                        showocean=True, oceancolor='rgb(230,235,240)',
-                    )
-                    
-                    if selected in ["Oceania", "Africa"] or (selected not in scope_mapping):
-                        geo_config["fitbounds"] = "locations"
+                    if not mapped.empty:
+                        # Create simplified choropleth map
+                        fig = px.choropleth(
+                            mapped,
+                            locations="iso_code",
+                            color="count",
+                            hover_name="country",
+                            color_continuous_scale="Viridis",
+                            range_color=[0, mapped["count"].max()]
+                        )
+                        
+                        # Simplified geographic configuration
+                        scope_mapping = {
+                            "Global": "world",
+                            "Asia": "asia", 
+                            "Europe": "europe",
+                            "North America": "north america", 
+                            "South America": "south america"
+                        }
+                        
+                        geo_scope = scope_mapping.get(selected, "world")
+                        
+                        # Apply geographic scope
+                        if selected in scope_mapping and selected != "Global":
+                            fig.update_geos(scope=geo_scope)
+                        else:
+                            fig.update_geos(fitbounds="locations" if selected != "Global" else None)
+                        
+                        # Update layout for better appearance
+                        fig.update_layout(
+                            height=400,
+                            margin=dict(l=0, r=0, t=0, b=0),
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            plot_bgcolor='rgba(0,0,0,0)'
+                        )
+                        
+                        # Update color bar
+                        fig.update_coloraxes(
+                            colorbar=dict(
+                                thickness=15,
+                                len=0.7,
+                                x=1.02,
+                                xpad=10,
+                                y=0.5,
+                                title="Engagements"
+                            )
+                        )
+                        
+                        # Update hover template
+                        fig.update_traces(
+                            hovertemplate="<b>%{hovertext}</b><br>Engagements: %{z}<extra></extra>"
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
                     else:
-                        geo_config["scope"] = geo_scope
-                    fig.update_layout(geo=geo_config, height=400, margin=dict(l=0, r=0, t=0, b=0))
-                    fig.update_coloraxes(colorbar=dict(thickness=5, len=0.7, x=1.02, xpad=10, y=0.5))
-                    fig.update_traces(hovertemplate="<b>%{hovertext}</b><br>Engagements: %{z}<extra></extra>")
-                    st.plotly_chart(fig, use_container_width=True)
+                        st.warning("No countries found with valid ISO codes for mapping.")
+                        
+                except Exception as e:
+                    st.error(f"Error creating map: {str(e)}")
+                    st.info("Unable to display geographic map for this selection.")
+            else:
+                st.info("No geographic data available for the selected region.")
         
         col1, col2 = st.columns([1, 1])
+        
+        # Regional/Country Distribution Pie Chart
         with col1:
             chart_data = None
             chart_title = ""
-            if selected == "Global":
-                chart_title = "Regional Distribution"
-                if "region" in data.columns and not data["region"].dropna().empty:
-                    chart_data = data["region"].value_counts()
-            else:
-                chart_title = f"Countries in {selected}"
-                if "country" in geo_df.columns and not geo_df["country"].dropna().empty:
-                    chart_data = geo_df["country"].value_counts()
-            render_icon_header("pie_chart", chart_title, 24, 20)
-            if chart_data is not None and not chart_data.empty:
-                fig = go.Figure(go.Pie(
-                    labels=chart_data.index, values=chart_data.values, hole=0.7,
-                    marker_colors=Config.CB_SAFE_PALETTE, textinfo='percent',
-                    hoverinfo='label+percent+value', textfont_size=14
-                ))
-                fig.update_layout(
-                    height=400, margin=dict(l=20, r=20, t=50, b=20),
-                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                    showlegend=True,
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5)
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No data to display for this selection.")
+            
+            try:
+                if selected == "Global":
+                    chart_title = "Regional Distribution"
+                    if "region" in data.columns and not data["region"].dropna().empty:
+                        chart_data = data["region"].value_counts()
+                else:
+                    chart_title = f"Countries in {selected}"
+                    if "country" in geo_df.columns and not geo_df["country"].dropna().empty:
+                        chart_data = geo_df["country"].value_counts()
                 
+                render_icon_header("pie_chart", chart_title, 24, 20)
+                
+                if chart_data is not None and not chart_data.empty and len(chart_data) > 0:
+                    # Create pie chart with better error handling
+                    fig = go.Figure(go.Pie(
+                        labels=chart_data.index, 
+                        values=chart_data.values, 
+                        hole=0.6,
+                        marker_colors=Config.CB_SAFE_PALETTE[:len(chart_data)], 
+                        textinfo='percent',
+                        hoverinfo='label+percent+value', 
+                        textfont_size=12
+                    ))
+                    
+                    fig.update_layout(
+                        height=400, 
+                        margin=dict(l=10, r=10, t=40, b=10),
+                        paper_bgcolor='rgba(0,0,0,0)', 
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        showlegend=True,
+                        legend=dict(
+                            orientation="v", 
+                            yanchor="middle", 
+                            y=0.5, 
+                            xanchor="left", 
+                            x=1.02,
+                            font=dict(size=10)
+                        )
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No data to display for this selection.")
+                    
+            except Exception as e:
+                st.error(f"Error creating distribution chart: {str(e)}")
+                st.info("Unable to display distribution chart.")
+                
+        # ESG Themes Section
         with col2:
             render_icon_header("eco", "ESG Themes", 24, 20)
             
-            # Calculate theme data for selected region
-            theme_data = {}
-            for theme in theme_cols:
-                if theme in geo_df.columns:
-                    count = (geo_df[theme] == "Y").sum()
-                    theme_data[theme] = count
+            try:
+                if not geo_df.empty:
+                    # Calculate theme data for selected region
+                    theme_data = {}
+                    for theme in theme_cols:
+                        if theme in geo_df.columns:
+                            count = (geo_df[theme] == "Y").sum()
+                            theme_data[theme] = count
+                        else:
+                            theme_data[theme] = 0
+                    
+                    total_themes = sum(theme_data.values())
+                    
+                    if total_themes > 0:
+                        # Create ESG gauge charts with better error handling
+                        for row_idx in range(0, len(theme_cols), 2):
+                            gauge_cols = st.columns(2)
+                            for col_idx in range(2):
+                                theme_idx = row_idx + col_idx
+                                if theme_idx < len(theme_cols):
+                                    theme = theme_cols[theme_idx]
+                                    count = theme_data[theme]
+                                    with gauge_cols[col_idx]:
+                                        try:
+                                            count = int(count)
+                                            percentage = int(round((count / total_themes) * 100)) if total_themes > 0 else 0
+                                            color = Config.ESG_COLORS.get(theme, Config.CB_SAFE_PALETTE[theme_idx % len(Config.CB_SAFE_PALETTE)])
+                                            
+                                            # Create gauge with simplified options
+                                            gauge_options = {
+                                                "tooltip": {
+                                                    "formatter": f"{theme}<br/>Count: {count}<br/>Share: {percentage}%"
+                                                },
+                                                "series": [{
+                                                    "type": "gauge",
+                                                    "startAngle": 180,
+                                                    "endAngle": 0,
+                                                    "radius": "90%",
+                                                    "center": ["50%", "75%"],
+                                                    "min": 0,
+                                                    "max": 100,
+                                                    "axisLine": {
+                                                        "lineStyle": {
+                                                            "width": 10,
+                                                            "color": [[1, "#f0f2f6"]]
+                                                        }
+                                                    },
+                                                    "progress": {
+                                                        "show": True,
+                                                        "width": 10,
+                                                        "itemStyle": {
+                                                            "color": color
+                                                        }
+                                                    },
+                                                    "axisTick": {"show": False},
+                                                    "splitLine": {"show": False},
+                                                    "axisLabel": {"show": False},
+                                                    "pointer": {"show": False},
+                                                    "title": {
+                                                        "show": True,
+                                                        "offsetCenter": [0, "-20%"],
+                                                        "fontSize": 12,
+                                                        "fontWeight": "bold",
+                                                        "color": "#333"
+                                                    },
+                                                    "detail": {
+                                                        "formatter": str(count),
+                                                        "offsetCenter": [0, "10%"],
+                                                        "fontSize": 18,
+                                                        "fontWeight": "bold",
+                                                        "color": color
+                                                    },
+                                                    "data": [{
+                                                        "value": percentage,
+                                                        "name": theme
+                                                    }]
+                                                }]
+                                            }
+                                            
+                                            # Render the gauge with a unique key
+                                            chart_key = f"geo_{selected.replace(' ', '_').lower()}_{theme.replace(' ', '_').lower()}_{st.session_state.get('refresh_counter', 0)}"
+                                            st_echarts(
+                                                options=gauge_options,
+                                                height="180px",
+                                                key=chart_key
+                                            )
+                                            
+                                        except Exception as gauge_error:
+                                            # Fallback to simple metric if gauge fails
+                                            st.metric(
+                                                label=theme,
+                                                value=count,
+                                                delta=f"{percentage}% of themes" if total_themes > 0 else None
+                                            )
+                    else:
+                        st.info("No ESG themes data available for the selected region.")
                 else:
-                    theme_data[theme] = 0
+                    st.info("No data available for ESG analysis.")
+                    
+            except Exception as e:
+                st.error(f"Error creating ESG analysis: {str(e)}")
+                st.info("Unable to display ESG theme analysis.")
             
-            total_themes = sum(theme_data.values())
-            
-            # Force initialization check for geo charts
-            geo_init_key = f"geo_charts_initialized_{selected.replace(' ', '_')}"
-            if geo_init_key not in st.session_state:
-                st.session_state[geo_init_key] = False
-            
-            # Render charts with proper initialization
-            if not geo_df.empty and st.session_state.get('app_initialized', False):
-                for row_idx in range(0, len(theme_cols), 2):
-                    gauge_cols = st.columns(2)
-                    for col_idx in range(2):
-                        theme_idx = row_idx + col_idx
-                        if theme_idx < len(theme_cols):
-                            theme = theme_cols[theme_idx]
-                            count = theme_data[theme]
-                            with gauge_cols[col_idx]:
-                                count = int(count)
-                                percentage = int(round((count / total_themes) * 100)) if total_themes > 0 else 0
-                                color = Config.ESG_COLORS[theme]
-                                option = create_esg_gauge(theme, count, color, percentage)
-                                
-                                # Render chart with error handling
-                                try:
-                                    st_echarts(
-                                        options=option, height="200px", 
-                                        key=f"geo_{theme.replace(' ', '_').lower()}"
-                                    )
-                                except Exception as e:
-                                    st.error(f"Geo chart rendering error for {theme}: {str(e)}")
-                
-                # Mark charts as initialized and force rerun if this is first time for this region
-                if not st.session_state[geo_init_key]:
-                    st.session_state[geo_init_key] = True
-                    st.rerun()
-            else:
-                if geo_df.empty:
-                    st.info("No ESG theme data available for the selected region.")
-                else:
-                    # Show loading placeholder
-                    for row_idx in range(0, len(theme_cols), 2):
-                        gauge_cols = st.columns(2)
-                        for col_idx in range(2):
-                            theme_idx = row_idx + col_idx
-                            if theme_idx < len(theme_cols):
-                                theme = theme_cols[theme_idx]
-                                with gauge_cols[col_idx]:
-                                    st.info(f"Loading {theme} chart...")
-            
+        # Regional comparison info
         if not geo_df.empty:
-            col1, col2 = st.columns([1.14, 1])
+            col1, col2 = st.columns([1.2, 1])
             with col1:
-                if selected != "Global":
-                    region_df = data[data["region"] == selected]
-                    total = len(region_df)
-                    avg = int(data.groupby("region").size().mean())
-                    compare = "higher" if total > avg else "lower" if total < avg else "equal to"
-                    st.info(f"{selected} has {total} companies targeted. That's {compare} than average ({avg}).")
+                try:
+                    if selected != "Global" and "region" in data.columns:
+                        region_df = data[data["region"] == selected]
+                        total = len(region_df)
+                        if len(data.groupby("region")) > 1:
+                            avg = int(data.groupby("region").size().mean())
+                            compare = "higher" if total > avg else "lower" if total < avg else "equal to"
+                            st.info(f"📊 {selected} has {total} companies targeted. That's {compare} than average ({avg}).")
+                except Exception:
+                    pass
+                    
             with col2:
-                excluded = ["not started", "verified", "success", "cancelled"]
-                active_in_region = (~geo_df["milestone"].str.lower().isin(excluded)).sum() if "milestone" in geo_df.columns else 0
-                active_pct = round(active_in_region / len(geo_df) * 100) if len(geo_df) > 0 else 0
-                st.warning(f"{active_pct}% of {selected}'s engagements are currently Active.")
+                try:
+                    excluded = ["not started", "verified", "success", "cancelled"]
+                    active_in_region = (~geo_df["milestone"].str.lower().isin(excluded)).sum() if "milestone" in geo_df.columns else 0
+                    active_pct = round(active_in_region / len(geo_df) * 100) if len(geo_df) > 0 else 0
+                    st.warning(f"⚡ {active_pct}% of {selected}'s engagements are currently Active.")
+                except Exception:
+                    pass
 
+        # Sector Distribution
         render_icon_header(Config.HEADER_ICONS["sector"], "Sector Distribution", 40, 28)
-        if "gics_sector" in data.columns:
-            st.write(Config.CHART_CONTEXTS["sector"])
-            fig = create_chart(data["gics_sector"].value_counts(), chart_type="bar")
-            st.plotly_chart(fig, use_container_width=True)
-      
+        try:
+            if "gics_sector" in data.columns and not data["gics_sector"].dropna().empty:
+                st.write(Config.CHART_CONTEXTS["sector"])
+                sector_data = data["gics_sector"].value_counts()
+                if not sector_data.empty:
+                    fig = create_chart(sector_data, chart_type="bar", height=400)
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No sector data available.")
+            else:
+                st.info("No sector information available in the dataset.")
+        except Exception as e:
+            st.error(f"Error creating sector distribution: {str(e)}")
+            st.info("Unable to display sector distribution chart.")
 
 def engagement_operations():
     tab1, tab2, tab3 = st.tabs([
@@ -634,6 +742,7 @@ def engagement_operations():
         render_icon_header("history", "Engagement Records")
         display_interaction_history(data['engagement_id'])
         render_hr(10, 10)
+
 def task_management():
     df = st.session_state.get('DATA', pd.DataFrame())
     if df.empty or 'next_action_date' not in df.columns:
@@ -691,19 +800,11 @@ def main():
     # Initialize core session state variables
     if 'selected_page' not in st.session_state:
         st.session_state.selected_page = 'Dashboard'
-    if 'app_initialized' not in st.session_state:
-        st.session_state.app_initialized = False
     
     # Load data if not available
     if 'validator' not in st.session_state or 'FULL_DATA' not in st.session_state:
         with st.spinner('Loading application data...'):
             refresh_data()
-            # Mark as initialized after data load
-            st.session_state.app_initialized = True
-            # Force a rerun to ensure proper chart initialization
-            if not st.session_state.get('initial_rerun_done', False):
-                st.session_state.initial_rerun_done = True
-                st.rerun()
     
     render_icon_header(Config.HEADER_ICONS["app_title"], Config.APP_TITLE, 32, 32)
     st.markdown('<div style="margin-top:-33px;"></div>', unsafe_allow_html=True)
