@@ -1,0 +1,43 @@
+/* assets/style.css */
+
+/* App background */
+.stApp {
+  background-color: #f8f9fa;
+}
+
+/* Urgent alert box */
+.alert-urgent {
+  background-color: #ffe6e6;
+  border-left: 4px solid #e74c3c;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* Warning alert box */
+.alert-warning {
+  background-color: #fff3cd;
+  border-left: 4px solid #f39c12;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* Metric cards */
+div[data-testid="metric-container"] {
+  background-color: #ffffff;
+  border: 1px solid #e9ecef;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+div[data-testid="metric-container"]:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+/* Expand main width on first section */
+section.main > div:first-child {
+  max-width: 100%;
+}

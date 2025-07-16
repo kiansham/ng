@@ -31,59 +31,60 @@
         "Forests",
         "Other"
     ],
-    "objective": [
-        "Emissions Transparency (Basic)",
-        "Emissions Transparency (Scope 3)",
-        "Flag Disclosure Importance",
-        "CDP Disclosure",
-        "Discuss Company Position",
-        "Verify",
-        "Close Engagement",
-        "Other"
-    ],
-    "milestone": [
-        "Not Started",
-        "Initiated",
-        "No Response",
-        "Negative Response",
-        "Constructive Response",
-        "Improving Response",
-        "Aspiration",
-        "Commitment Made",
-        "Partial Disclosure",
-        "Full Disclosure",
-        "Verified",
-        "Success",
-        "Cancelled"
-    ],
-    "milestone_status": [
-        "Red", 
-        "Amber", 
-        "Green"
-    ],
     "interaction_type": [
         "Email",
         "Call",
         "Meeting",
-        "Letter",
-        "AGM",
-        "Conference Call"
+        "Letter"
+    ],
+    "repeat": [
+        "Yes",
+        "No"
+    ],
+    "objective": [
+        "Emissions Transparency",
+        "CDP Disclosure",
+        "Follow Up",
+        "Verify Disclosure",
+        "Other"
+    ],
+    "initial_status": [
+        "Not Started",
+        "Started"],
+    "outcome": [
+        "In Progress",
+        "No Response",
+        "Follow Up - First",
+        "Follow Up - Second",
+        "Response Received",
+        "Engagement Complete",
+        "Email Failed"
+    ],
+    "sentiment": [
+        "No Response",
+        "Positive",
+        "Negative",
+        "Neutral",
+        "Improving",
+        "Committed"
     ],
     "outcome_status": [
-        "Achieved",
+        "In Progress",
+        "Success",
         "Partial",
-        "Neutral",
-        "No Progress",
-        "Backwards Step",
+        "Failure",
         "Withdrawal",
-        "Escalation Required",
-        "N/A"
+        "Escalation Required"
+    ],
+    "outcome_colour": [
+        "Red", 
+        "Amber", 
+        "Green"
     ],
     "escalation_level": [
         "None Required",
-        "Reminder",
-        "Follow Up",
-        "Collaborative Push",
+        "Failed Email",
+        "Chase",
         "Senior Appeal (from AQR)",
         "Senior Appeal (to Company)",
         "Escalate - Vote Against Committee",
