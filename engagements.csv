@@ -1,5 +1,5 @@
-company_name,isin,aqr_id,gics_sector,country,region,program,objective,initial_status,climate_change,water,forests,other,e,s,g,interaction_type,outcome,sentiment,outcome_status,escalation_level,milestone_status,start_date,target_date,last_interaction_date,interaction_summary,outcome_date,next_action_date,engagement_id,interactions,theme,created_date,created_by,days_to_next_action,is_complete,on_time,late,overdue,urgent
-Advanced Inc,ISIN1009,AQR9,Industrials,Colombia,South America,Direct,Emissions Transparency,Started,Y,,Y,,TRUE,FALSE,FALSE,Call,Response Received,Neutral,In Progress,Chase,Red,2025-05-03,2025-12-31,2025-06-26,We met them again. there is no progress.,09/06/2025,2025-07-10,10,"[
+company_name,isin,aqr_id,gics_sector,country,region,program,objective,repeat,initial_status,climate_change,water,forests,other,e,s,g,interaction_type,outcome,sentiment,outcome_status,escalation_level,milestone_status,start_date,target_date,last_interaction_date,interaction_summary,outcome_date,next_action_date,engagement_id,interactions,theme,created_date,created_by,days_to_next_action,is_complete,on_time,late,overdue,urgent
+Advanced Inc,ISIN1009,AQR9,Industrials,Colombia,South America,Direct,Emissions Transparency,FALSE,Started,Y,,Y,,TRUE,FALSE,FALSE,Call,Response Received,Neutral,In Progress,Chase,Red,05/03/2025,31/12/2025,26/06/2025,We met them again. there is no progress.,09/06/2025,07/10/2025,10,"[
   {
     ""interaction_id"": ""64f80046-8732-4c29-b182-c39be1c7297e"",
     ""interaction_type"": ""Meeting"",
@@ -24,13 +24,13 @@ Advanced Inc,ISIN1009,AQR9,Industrials,Colombia,South America,Direct,Emissions T
     ""logged_by"": ""System"",
     ""logged_date"": ""2025-06-26""
   }
-]","Climate, Forests",,,-8.0,True,True,False,False,True
-Global Tech Inc.,ISIN1010,AQR10,Information Technology,USA,North America,CDP,CDP Disclosure,Started,Y,,,,TRUE,FALSE,FALSE,Email,No Response,No Response,In Progress,Chase,Red,,2025-12-31,,,03/06/2025,,11,[],Climate,,,,False,False,False,False,False
-Euro-Bank Corp,ISIN1011,AQR11,Financials,Poland,Europe,Direct,Emissions Transparency,Started,Y,,Y,,FALSE,TRUE,TRUE,Meeting,No Response,No Response,In Progress,Chase,Red,2025-02-10,2025-12-31,,,08/05/2025,,12,[],"Climate, Forests",,,,False,False,False,False,False
-India Industrial,ISIN1019,AQR19,Industrials,India,Asia,CDP,Emissions Transparency,Started,Y,,,Y,TRUE,FALSE,TRUE,Email,No Response,No Response,In Progress,Chase,Red,2025-06-01,2025-12-31,,,24/06/2025,,20,[],"Climate, Other",,,,False,False,False,False,False
-Infosys,ISIN1007,AQR7,Information Technology,India,Asia,Other,Other,Started,,,,Y,FALSE,TRUE,FALSE,Email,Email Failed,No Response,In Progress,Failed Email,Red,,2025-12-31,,,04/06/2025,,8,[],Other,,,,False,False,False,False,False
-ExRon,ISIN1000,AQR0,Energy,USA,North America,CDP,CDP Disclosure,Started,Y,,,,TRUE,FALSE,FALSE,Email,No Response,No Response,In Progress,None Required,Amber,,2025-12-31,,,,,1,[],Climate,,,,False,False,False,False,False
-Ditch Bank,ISIN1001,AQR1,Financials,Germany,Europe,CDP,CDP Disclosure,Started,Y,Y,,,TRUE,FALSE,FALSE,Call,Response Received,Positive,In Progress,None Required,Green,2025-01-02,2025-12-31,2025-06-26,Testing,08/06/2025,2025-07-10,2,"[
+]","Climate, Forests",,,81,TRUE,TRUE,FALSE,FALSE,FALSE
+Global Tech Inc.,ISIN1010,AQR10,Information Technology,USA,North America,CDP,CDP Disclosure,FALSE,Started,Y,,,,TRUE,FALSE,FALSE,Email,No Response,No Response,In Progress,Chase,Red,,31/12/2025,,,03/06/2025,,11,[],Climate,,,,FALSE,FALSE,FALSE,FALSE,FALSE
+Euro-Bank Corp,ISIN1011,AQR11,Financials,Poland,Europe,Direct,Emissions Transparency,TRUE,Started,Y,,Y,,FALSE,TRUE,TRUE,Meeting,No Response,No Response,In Progress,Chase,Red,02/10/2025,31/12/2025,,,08/05/2025,,12,[],"Climate, Forests",,,,FALSE,FALSE,FALSE,FALSE,FALSE
+India Industrial,ISIN1019,AQR19,Industrials,India,Asia,CDP,Emissions Transparency,TRUE,Started,Y,,,Y,TRUE,FALSE,TRUE,Email,No Response,No Response,In Progress,Chase,Red,06/01/2025,31/12/2025,,,24/06/2025,,20,[],"Climate, Other",,,,FALSE,FALSE,FALSE,FALSE,FALSE
+Infosys,ISIN1007,AQR7,Information Technology,India,Asia,Other,Other,FALSE,Started,,,,Y,FALSE,TRUE,FALSE,Email,Email Failed,No Response,In Progress,Failed Email,Red,,31/12/2025,,,04/06/2025,,8,[],Other,,,,FALSE,FALSE,FALSE,FALSE,FALSE
+ExRon,ISIN1000,AQR0,Energy,USA,North America,CDP,CDP Disclosure,FALSE,Started,Y,,,,TRUE,FALSE,FALSE,Email,No Response,No Response,In Progress,None Required,Amber,,31/12/2025,,,,,1,[],Climate,,,,FALSE,FALSE,FALSE,FALSE,FALSE
+Ditch Bank,ISIN1001,AQR1,Financials,Germany,Europe,CDP,CDP Disclosure,FALSE,Started,Y,Y,,,TRUE,FALSE,FALSE,Call,Response Received,Positive,In Progress,None Required,Green,01/02/2025,31/12/2025,26/06/2025,Testing,08/06/2025,07/10/2025,2,"[
   {
     ""interaction_id"": ""7f400336-f9d2-41e6-aabb-6b9e6db79ac2"",
     ""interaction_type"": ""Call"",
@@ -43,17 +43,17 @@ Ditch Bank,ISIN1001,AQR1,Financials,Germany,Europe,CDP,CDP Disclosure,Started,Y,
     ""logged_by"": ""System"",
     ""logged_date"": ""2025-06-26""
   }
-]","Climate, Water",,,-8.0,True,True,False,False,True
-Mitsi,ISIN1002,AQR2,Industrials,Japan,Asia,CDP,Follow Up,Started,Y,,,,TRUE,FALSE,FALSE,Email,Follow Up - First,Improving,In Progress,None Required,Amber,,2025-12-31,2025-06-23,Testing,02/06/2025,,3,[],Climate,,,,False,False,False,False,False
-National Gid,ISIN1003,AQR3,Utilities,UK,Europe,CDP,Verify Disclosure,Started,,Y,,,TRUE,FALSE,FALSE,Meeting,Follow Up - First,Commited,Success,None Required,Green,,2025-12-31,2025-07-10,Testing,13/05/2025,,4,[],Water,,,,False,False,False,False,False
-Sante Pour Tous,ISIN1004,AQR4,Health Care,France,Europe,CDP,Follow Up,Started,,Y,,,TRUE,FALSE,FALSE,Call,Response Received,Commited,Success,None Required,Green,,2025-12-31,2025-07-11,Testing,01/04/2025,,5,[],Water,,,,True,True,False,False,False
-Poutine Industries,ISIN1005,AQR5,Materials,Canada,North America,CDP,CDP Disclosure,Not Started,Y,,,,TRUE,FALSE,FALSE,Call,In Progress,,In Progress,None Required,Amber,2025-05-02,2025-12-31,,,15/06/2025,,6,[],Climate,,,,False,False,False,False,False
-Boomerang Services,ISIN1006,AQR6,Consumer Staples,Australia,Oceania,CDP,CDP Disclosure,Not Started,,,Y,,TRUE,FALSE,FALSE,Call,In Progress,,In Progress,None Required,Amber,,2025-12-31,,,13/06/2025,,7,[],Forests,,,,False,False,False,False,False
-Aussie Mining Co.,ISIN1013,AQR13,Materials,Australia,Oceania,Direct,Emissions Transparency,Started,,Y,,,TRUE,TRUE,FALSE,Call,Follow Up - Second,Improving,In Progress,None Required,Amber,2025-03-12,2025-12-31,2025-07-01,Positive discussion,16/06/2025,,14,[],Water,,,,False,False,False,False,False
-Pharma-Good,ISIN1014,AQR14,Health Care,Switzerland,Europe,Other,CDP Disclosure,Started,,,,Y,FALSE,TRUE,TRUE,Email,Response Received,Positive,In Progress,None Required,Green,2025-04-01,2025-12-31,2025-07-03,Acknowledged,29/05/2025,,15,[],Other,,,,True,True,False,False,False
-Utilities Trust,ISIN1017,AQR17,Utilities,Ireland,Europe,CDP,Verify Disclosure,Started,Y,Y,,,TRUE,TRUE,FALSE,Meeting,Engagement Complete,Commited,Success,None Required,Green,,2025-12-31,2025-06-30,Confirmed at AGM,,,18,[],"Climate, Water",,,,True,True,False,False,False
-African CommTel,ISIN1018,AQR18,Communication Services,Nigeria,Africa,Other,Verify Disclosure,Started,,Y,,Y,FALSE,TRUE,FALSE,Email,Engagement Complete,Commited,Partial,None Required,Green,,2025-12-31,2025-06-14,Acknowledged but no commitment,30/05/2025,,19,[],"Water, Other",,,,True,True,False,False,False
-Apple,ISIN1222,aqr20,Communication Services,USA,North America,CDP,Verify Disclosure,Started,Y,Y,Y,Y,TRUE,TRUE,TRUE,Email,In Progress,Commited,Success,None Required,Green,,2025-12-31,2025-07-05,Testing 1 2 3,,,21,"[
+]","Climate, Water",,,81,TRUE,TRUE,FALSE,FALSE,FALSE
+Mitsi,ISIN1002,AQR2,Industrials,Japan,Asia,CDP,Follow Up,FALSE,Started,Y,,,,TRUE,FALSE,FALSE,Email,Follow Up - First,Improving,In Progress,None Required,Amber,,31/12/2025,23/06/2025,Testing,02/06/2025,,3,[],Climate,,,,FALSE,FALSE,FALSE,FALSE,FALSE
+National Gid,ISIN1003,AQR3,Utilities,UK,Europe,CDP,Verify Disclosure,FALSE,Started,,Y,,,TRUE,FALSE,FALSE,Meeting,Follow Up - First,Commited,Success,None Required,Green,,31/12/2025,10/07/2025,Testing,13/05/2025,,4,[],Water,,,,FALSE,FALSE,FALSE,FALSE,FALSE
+Sante Pour Tous,ISIN1004,AQR4,Health Care,France,Europe,CDP,Follow Up,FALSE,Started,,Y,,,TRUE,FALSE,FALSE,Call,Response Received,Commited,Success,None Required,Green,,31/12/2025,11/07/2025,Testing,01/04/2025,,5,[],Water,,,,TRUE,TRUE,FALSE,FALSE,FALSE
+Poutine Industries,ISIN1005,AQR5,Materials,Canada,North America,CDP,CDP Disclosure,FALSE,Not Started,Y,,,,TRUE,FALSE,FALSE,Call,In Progress,,In Progress,None Required,Amber,05/02/2025,31/12/2025,,,15/06/2025,,6,[],Climate,,,,FALSE,FALSE,FALSE,FALSE,FALSE
+Boomerang Services,ISIN1006,AQR6,Consumer Staples,Australia,Oceania,CDP,CDP Disclosure,FALSE,Not Started,,,Y,,TRUE,FALSE,FALSE,Call,In Progress,,In Progress,None Required,Amber,,31/12/2025,,,13/06/2025,,7,[],Forests,,,,FALSE,FALSE,FALSE,FALSE,FALSE
+Aussie Mining Co.,ISIN1013,AQR13,Materials,Australia,Oceania,Direct,Emissions Transparency,FALSE,Started,,Y,,,TRUE,TRUE,FALSE,Call,Follow Up - Second,Improving,In Progress,None Required,Amber,03/12/2025,31/12/2025,01/07/2025,Positive discussion,16/06/2025,,14,[],Water,,,,FALSE,FALSE,FALSE,FALSE,FALSE
+Pharma-Good,ISIN1014,AQR14,Health Care,Switzerland,Europe,Other,CDP Disclosure,TRUE,Started,,,,Y,FALSE,TRUE,TRUE,Email,Response Received,Positive,In Progress,None Required,Green,04/01/2025,31/12/2025,03/07/2025,Acknowledged,29/05/2025,,15,[],Other,,,,TRUE,TRUE,FALSE,FALSE,FALSE
+Utilities Trust,ISIN1017,AQR17,Utilities,Ireland,Europe,CDP,Verify Disclosure,FALSE,Started,Y,Y,,,TRUE,TRUE,FALSE,Meeting,Engagement Complete,Commited,Success,None Required,Green,,31/12/2025,30/06/2025,Confirmed at AGM,,,18,[],"Climate, Water",,,,TRUE,TRUE,FALSE,FALSE,FALSE
+African CommTel,ISIN1018,AQR18,Communication Services,Nigeria,Africa,Other,Verify Disclosure,FALSE,Started,,Y,,Y,FALSE,TRUE,FALSE,Email,Engagement Complete,Commited,Partial,None Required,Green,,31/12/2025,14/06/2025,Acknowledged but no commitment,30/05/2025,,19,[],"Water, Other",,,,TRUE,TRUE,FALSE,FALSE,FALSE
+Apple,ISIN1222,aqr20,Communication Services,USA,North America,CDP,Verify Disclosure,TRUE,Started,Y,Y,Y,Y,TRUE,TRUE,TRUE,Email,In Progress,Commited,Success,None Required,Green,,31/12/2025,05/07/2025,Testing 1 2 3,,,21,"[
   {
     ""interaction_id"": ""4dad1631-3895-4568-b6b6-de56de1288a9"",
     ""interaction_type"": ""Email"",
@@ -66,8 +66,8 @@ Apple,ISIN1222,aqr20,Communication Services,USA,North America,CDP,Verify Disclos
     ""logged_by"": ""System"",
     ""logged_date"": ""2025-06-26""
   }
-]","Climate, Water, Forests, Other",,System,,False,False,False,False,False
-Imirt Pele,ISIN1008,AQR8,Consumer Discretionary,Brazil,South America,Direct,Other,Started,,,,Y,FALSE,TRUE,TRUE,Email,Response Received,Neutral,In Progress,Reminder,Amber,,2025-12-31,2025-07-02,Sent Email,31/05/2025,,9,[],Other,,,,True,True,False,False,False
-Rising Sun Motors,ISIN1012,AQR12,Consumer Discretionary,South Korea,Asia,CDP,CDP Disclosure,Started,Y,Y,,,TRUE,FALSE,FALSE,Email,Email Failed,No Response,Escalation Required,Senior Appeal (from AQR),Red,2025-03-01,2025-12-31,,,25/05/2025,,13,[],"Climate, Water",,,,False,False,False,False,False
-Canuck Retail,ISIN1015,AQR15,Consumer Staples,Thailand,Asia,CDP,CDP Disclosure,Not Started,,,Y,,TRUE,FALSE,FALSE,Letter,Email Failed,No Response,Escalation Required,Senior Appeal (from Company),Red,2025-07-06,2025-12-31,,,,,16,[],Forests,,,,False,False,False,False,False
-China Energy,ISIN1016,AQR16,Energy,China,Asia,Direct,CDP Disclosure,Started,Y,Y,,,TRUE,FALSE,FALSE,Meeting,No Response,No Response,Escalation Required,Senior Appeal (to Company),Red,2025-05-02,2025-12-31,,,16/06/2025,,17,[],"Climate, Water",,,,False,False,False,False,False
+]","Climate, Water, Forests, Other",,System,,FALSE,FALSE,FALSE,FALSE,FALSE
+Imirt Pele,ISIN1008,AQR8,Consumer Discretionary,Brazil,South America,Direct,Other,TRUE,Started,,,,Y,FALSE,TRUE,TRUE,Email,Response Received,Neutral,In Progress,Reminder,Amber,,31/12/2025,02/07/2025,Sent Email,31/05/2025,,9,[],Other,,,,TRUE,TRUE,FALSE,FALSE,FALSE
+Rising Sun Motors,ISIN1012,AQR12,Consumer Discretionary,South Korea,Asia,CDP,CDP Disclosure,FALSE,Started,Y,Y,,,TRUE,FALSE,FALSE,Email,Email Failed,No Response,Escalation Required,Senior Appeal (from AQR),Red,03/01/2025,31/12/2025,,,25/05/2025,,13,[],"Climate, Water",,,,FALSE,FALSE,FALSE,FALSE,FALSE
+Canuck Retail,ISIN1015,AQR15,Consumer Staples,Thailand,Asia,CDP,CDP Disclosure,FALSE,Not Started,,,Y,,TRUE,FALSE,FALSE,Letter,Email Failed,No Response,Escalation Required,Senior Appeal (from Company),Red,07/06/2025,31/12/2025,,,,,16,[],Forests,,,,FALSE,FALSE,FALSE,FALSE,FALSE
+China Energy,ISIN1016,AQR16,Energy,China,Asia,Direct,CDP Disclosure,FALSE,Started,Y,Y,,,TRUE,FALSE,FALSE,Meeting,No Response,No Response,Escalation Required,Senior Appeal (to Company),Red,05/02/2025,31/12/2025,,,16/06/2025,,17,[],"Climate, Water",,,,FALSE,FALSE,FALSE,FALSE,FALSE
