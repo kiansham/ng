@@ -8,7 +8,7 @@ class Config:
     
     COLORS = {"primary": "#3498db", "success": "#2ecc71", "warning": "#f39c12", "danger": "#e74c3c"}
     CB_SAFE_PALETTE = ["#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854"]
-    ESG_COLORS = {"Climate Change": "#2E8B57", "Water": "#4682B4", "Forests": "#9370DB", "Other": "#FF6B6B"}
+    ESG_COLORS = {"Climate": "#2E8B57", "Water": "#4682B4", "Forests": "#9370DB", "Other": "#FF6B6B"}
     
     URGENT_DAYS = 3
     WARNING_DAYS = 7

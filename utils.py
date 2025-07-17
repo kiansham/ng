@@ -142,7 +142,7 @@ def create_engagement(data: dict):
         "forests": forests_flag, 
         "other": other_flag,
         "created_date": datetime.now(), "created_by": data.get("created_by", "System"), "last_interaction_date": None,
-        "next_action_date": data.get("start_date"), "initial_status": "Not Started", "outcome": "Not Started",
+        "next_action_date": data.get("start_date"), "initial_status": data.get("initial_status", "Not Started"), "outcome": data.get("initial_status", "Not Started"),
         "sentiment": "No Response", "escalation_level": "None Required", "outcome_status": "N/A", "interactions": "[]",
     }
     new_df_record = pd.DataFrame([new_record])
@@ -179,10 +179,11 @@ def log_interaction(data: dict):
     try: interactions = json.loads(df.loc[idx, "interactions"] or '[]')
     except (json.JSONDecodeError, TypeError): interactions = []
     
+    interaction_date = data.get("date") or data.get("last_interaction_date")
     interactions.append({
         "interaction_id": str(uuid.uuid4()), "interaction_type": data.get("interaction_type", "N/A"),
         "interaction_summary": data.get("interaction_summary", "No summary provided").strip(), 
-        "interaction_date": pd.to_datetime(data.get("last_interaction_date")).strftime('%Y-%m-%d'),
+        "interaction_date": pd.to_datetime(interaction_date).strftime('%Y-%m-%d'),
         "outcome_status": data.get("outcome_status", "N/A"), "logged_by": "System", 
         "logged_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     })
@@ -311,12 +312,23 @@ def display_interaction_history(engagement_id: int):
             render_hr()
 
 def render_engagement_focus_themes(data):
-    st.markdown(f"**Engagement Focus:**")
-    themes = {"Climate Change": "thermostat", "Water": "water_drop", "Forests": "forest"}
+    themes_mapping = {"Climate": "climate_change", "Water": "water", "Forests": "forests", "Other": "other"}
+    
+    active_themes = []
+    for theme_name, col_name in themes_mapping.items():
+        if data.get(col_name) == 'Y':
+            active_themes.append(theme_name)
+    
+    focus_areas = ", ".join(active_themes) if active_themes else "N/A"
+    st.markdown(f"**Engagement Focus:** {focus_areas}")
+    
+    themes = {"Climate": "thermostat", "Water": "water_drop", "Forests": "forest"}
+    # Use the same mapping as the text section for column names
+    theme_to_column = {"Climate": "climate_change", "Water": "water", "Forests": "forests"}
     cols = st.columns(len(themes))
     
     for i, (theme, icon) in enumerate(themes.items()):
-        col_name = theme.lower().replace(' ', '_')
+        col_name = theme_to_column[theme]
         is_active = data.get(col_name) == 'Y'
         color = Config.ESG_COLORS.get(theme, 'white') if is_active else '#e8e8e8'
         
@@ -335,19 +347,19 @@ def render_engagement_summary(data):
         last_contact = pd.to_datetime(data.get('last_interaction_date'))
         next_action = pd.to_datetime(data.get('next_action_date'))
         
-        cols = st.columns(2)
+        cols1,cols2 = st.columns([1,1])
         
         if initial_status == 'not started':
-            cols[0].markdown(f"**Status:**")
-            cols[0].markdown(f"Engagement Not Started")
-            cols[1].markdown(f"**Target Start:**")
+            cols1.markdown(f"**Last Contact:**")
+            cols1.markdown(f"None Yet")
+            cols2.markdown(f"**Next Action:**")
             start_date = pd.to_datetime(data.get('start_date'))
-            cols[1].markdown(f"{start_date.strftime('%d %b %Y') if pd.notna(start_date) else ' '}")
+            cols2.markdown(f"{start_date.strftime('%d %b %Y') if pd.notna(start_date) else ' '}")
         else:
-            cols[0].markdown(f"**Last Contact:**")
-            cols[0].markdown(f"{last_contact.strftime('%d %b %Y') if pd.notna(last_contact) else 'N/A'}")
-            cols[1].markdown(f"**Next Action:**")
-            cols[1].markdown(f"{next_action.strftime('%d %b %Y') if pd.notna(next_action) else 'None'}")
+            cols1.markdown(f"**Last Contact:**")
+            cols1.markdown(f"{last_contact.strftime('%d %b %Y') if pd.notna(last_contact) else 'N/A'}")
+            cols2.markdown(f"**Next Action:**")
+            cols2.markdown(f"{next_action.strftime('%d %b %Y') if pd.notna(next_action) else 'None'}")
 
 def render_engagement_metrics(data):
     with st.container(border=True):        
@@ -366,8 +378,8 @@ def render_engagement_metrics(data):
         
         st.markdown(f"""
         <div style="text-align:center; padding:20px;">
-            <div style="font-size:24px; font-weight:bold; color:{color};">{current_outcome}</div>
-            <div style="font-size:14px; color:#666; margin-top:5px;">Current Status</div>
+            <div style="font-size:16px; color:#666; margin-top:5px;">Current Status:</div>
+            <div style="font-size:22px; font-weight:bold; color:{color};">{current_outcome}</div>
         </div>
         """, unsafe_allow_html=True)
         
@@ -416,7 +428,7 @@ def render_esg_focus_chart(data):
             st.info("No ESG focus areas selected")
 
 def get_themes_for_row(row):
-    theme_cols = {"Climate Change": "climate_change", "Water": "water", "Forests": "forests", "Other": "other"}
+    theme_cols = {"Climate": "climate_change", "Water": "water", "Forests": "forests", "Other": "other"}
     themes = [label for label, col in theme_cols.items() if col in row and str(row[col]).strip().upper() == 'Y']
     return ', '.join(themes) or 'None'
 
@@ -491,12 +503,12 @@ def render_geo_distribution_chart(data: pd.DataFrame, geo_df: pd.DataFrame, sele
 def render_esg_themes(geo_df: pd.DataFrame):
     render_icon_header("eco", "ESG Themes", 32, 28)
     if geo_df.empty: st.info("No data available for ESG analysis."); return
-    render_esg_gauges(geo_df, ["Climate Change", "Water", "Forests", "Other"], "geo")
+    render_esg_gauges(geo_df, ["Climate", "Water", "Forests", "Other"], "geo")
 
 def render_esg_gauges(data: pd.DataFrame, theme_cols: list, key_prefix: str):
     from streamlit_echarts import st_echarts
     
-    name_mapping = {"Climate Change": "climate_change", "Water": "water", "Forests": "forests", "Other": "other"}
+    name_mapping = {"Climate": "climate_change", "Water": "water", "Forests": "forests", "Other": "other"}
     
     theme_data = {}
     for theme in theme_cols:
@@ -539,7 +551,7 @@ def apply_filters(df: pd.DataFrame, filters: tuple):
         if vals and col in df.columns: conditions.append(df[col].isin(vals))
 
     if selected_theme:
-        theme_mapping = {"Climate Change": "climate_change", "Water": "water", "Forests": "forests", "Other": "other"}
+        theme_mapping = {"Climate": "climate_change", "Water": "water", "Forests": "forests", "Other": "other"}
         normalized_theme = theme_mapping.get(selected_theme, selected_theme.lower().replace(' ', '_'))
         if normalized_theme in df.columns: conditions.append(df[normalized_theme] == "Y")
 
@@ -582,7 +594,7 @@ def df_to_calendar_events(df: pd.DataFrame):
 
 def get_themes():
     theme_options = [
-        ":material/thermostat: Climate Change",
+        ":material/thermostat: Climate",
         ":material/water_drop: Water", 
         ":material/forest: Forests",
         ":material/category: Other"
@@ -590,7 +602,7 @@ def get_themes():
     selected_themes = st.pills("Themes", theme_options, selection_mode="multi", key='theme_pills')
     
     theme_flags = {
-        "climate_change": ":material/thermostat: Climate Change" in selected_themes,
+        "climate_change": ":material/thermostat: Climate" in selected_themes,
         "water": ":material/water_drop: Water" in selected_themes,
         "forests": ":material/forest: Forests" in selected_themes,
         "other": ":material/category: Other" in selected_themes
