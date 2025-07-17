@@ -5,3 +5,4 @@ streamlit-calendar
 streamlit-plotly-events
 streamlit-option-menu
 streamlit-echarts
+country_converter 
