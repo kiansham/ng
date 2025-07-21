@@ -144,7 +144,7 @@ def dashboard_page():
                 geo_df = data if region == "Global" else data[data.get("region") == region]
 
             
-            col1, col2 = st.columns([1,2])
+            col1, col2 = st.columns([1,3])
             with col1:
                 completed = (data.get("outcome", pd.Series(dtype=str)).str.lower() == "engagement complete").sum()
                 success = data.get("outcome", pd.Series(dtype=str)).isin(["Engagement Complete", "Response Received"]).sum()
@@ -162,26 +162,29 @@ def dashboard_page():
             with col2: 
                  render_map(geo_df, region)
 
-            col1, col2 = st.columns([1.2, 1])
+            col1, col2 = st.columns([1.4, 1])
             with col1: 
                 render_distribution(data, geo_df, region)
+                sector_data = geo_df.get("gics_sector", pd.Series()).value_counts()
+                if not sector_data.empty:
+                    fig = make_chart(sector_data, chart_type="bar", height=280,
+                                    margin=dict(l=2, r=10, t=2, b=2),
+                                    xaxis_title='', yaxis_title=' ',
+                                    showlegend=False)
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No sector data available for this selection.")
+
+
             with col2: 
                 render_header("eco", "ESG Themes", 32, 28)
                 if not geo_df.empty:
                     render_gauges(geo_df, ["Climate", "Water", "Forests", "Other"], "geo")
                 else:
                     st.info("No data available for ESG analysis.")
-
-            render_header("domain", "Sector Distribution", 32, 28)
-            sector_data = geo_df.get("gics_sector", pd.Series()).value_counts()
-            if not sector_data.empty: 
-                st.plotly_chart(make_chart(sector_data, chart_type="bar", height=400), use_container_width=True)
-            else: 
-                st.info("No sector data available for this selection.")
-
             render_header("table_chart", "Engagement List")
-            show_table(data, Config.COLUMNS)
 
+            show_table(data, Config.COLUMNS)
             with st.columns(6)[-1]:
                 csv = convert_df_to_csv(data)
                 st.download_button("Download Table", csv, f"filtered_engagements_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv", "text/csv", icon=":material/download:", use_container_width=True)

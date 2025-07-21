@@ -339,14 +339,14 @@ def make_gauge(label: str, value: int, colour: str, percentage: float = None):
             "pointer": {"show": False},
             "title": {
                 "show": True,
-                "fontSize": 11,
+                "fontSize": 12,
                 "fontWeight": 500,
                 "color": "#666",
                 "offsetCenter": [0, "30%"]
             },
             "detail": {
                 "formatter": str(max(0, int(value or 0))),
-                "fontSize": 24,
+                "fontSize": 23,
                 "fontWeight": 600,
                 "color": colour,
                 "offsetCenter": [0, "-5%"],
@@ -501,7 +501,6 @@ def render_map(geo_df: pd.DataFrame, region: str):
         "Oceania": {"lon": [110, 180], "lat": [-50, 10]},
         "South America": {"lon": [-82, -34], "lat": [-56, 13]},
         "Africa": {"lon": [-20, 55], "lat": [-35, 38]},
-        # Focus on continental North America and a bit of surrounding ocean
         "North America": {"lon": [-170, -50], "lat": [5, 75]}
     }
 
@@ -547,30 +546,70 @@ def render_distribution(data: pd.DataFrame, geo_df: pd.DataFrame, region: str):
     render_header("analytics", title, 32, 28)
     
     if chart_data is not None and not chart_data.empty:
-        fig = go.Figure(go.Pie(labels=chart_data.index,
-                               values=chart_data.values,
-                               hole=0.8,
-                               marker_colors=Config.CB_SAFE_PALETTE[:len(chart_data)],
-                               textinfo='label+percent',
-                               hoverinfo='label+value',
-                               textfont_size=14))
-        fig.update_layout(
-            height=330,
-            width=330,
-            margin=dict(l=10, r=30, t=10, b=10),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            showlegend=False,
-            legend=dict(
-                orientation="v",
-                yanchor="top",
-                y=1,
-                xanchor="right",
-                x=1,
-                font=dict(size=12)
+        if region == "Global":
+            y = chart_data.index.tolist()
+            x = chart_data.values.tolist()
+            base_colors = Config.CB_SAFE_PALETTE
+            repeats = (len(y) // len(base_colors)) + 1
+            colors = (base_colors * repeats)[:len(y)]
+            fig = go.Figure()
+            for i, (region_name, value) in enumerate(zip(y, x)):
+                fig.add_trace(go.Scatter(
+                    x=[0, value], y=[region_name, region_name], mode='lines',
+                    line=dict(color='#bbb', width=3),
+                    showlegend=False,
+                    hoverinfo='skip',
+                ))
+                fig.add_trace(go.Scatter(
+                    x=[value], y=[region_name], mode='markers+text',
+                    marker=dict(size=14, color=colors[i]),
+                    text=[value],
+                    textposition='middle right',
+                    textfont=dict(size=14),
+                    showlegend=False,
+                    hovertemplate='<b>%{y}</b><br>Count: %{x}<extra></extra>'
+                ))
+            fig.update_layout(
+                height=200,
+                margin=dict(l=2, r=10, t=2, b=2),
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(title=' ', showgrid=False, zeroline=False),
+                yaxis=dict(title='', showgrid=False, zeroline=False, autorange='reversed'),
             )
-        )
-        st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            y = chart_data.index.tolist()
+            x = chart_data.values.tolist()
+            base_colors = Config.CB_SAFE_PALETTE
+            repeats = (len(y) // len(base_colors)) + 1
+            colors = (base_colors * repeats)[:len(y)]
+            fig = go.Figure()
+            for i, (country, value) in enumerate(zip(y, x)):
+                fig.add_trace(go.Scatter(
+                    x=[0, value], y=[country, country], mode='lines',
+                    line=dict(color='#bbb', width=3),
+                    showlegend=False,
+                    hoverinfo='skip',
+                ))
+                fig.add_trace(go.Scatter(
+                    x=[value], y=[country], mode='markers+text',
+                    marker=dict(size=14, color=colors[i]),
+                    text=[value],
+                    textposition='middle right',
+                    textfont=dict(size=14),
+                    showlegend=False,
+                    hovertemplate='<b>%{y}</b><br>Count: %{x}<extra></extra>'
+                ))
+            fig.update_layout(
+                height=200,
+                margin=dict(l=2, r=10, t=2, b=2),
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(title=' ', showgrid=False, zeroline=False),
+                yaxis=dict(title='', showgrid=False, zeroline=False, autorange='reversed'),
+            )
+            st.plotly_chart(fig, use_container_width=True)
     else: 
         st.info("No data to display for this selection.")
 
@@ -598,7 +637,7 @@ def render_gauges(data: pd.DataFrame, themes: list, key_prefix: str):
                         context = "overview" if key_prefix == "dashboard" else "geo_analysis"
                         key = f"esg_{context}_{key_prefix}_{theme.lower().replace(' ', '_')}"
                         st_echarts(options=make_gauge(theme, count, Config.ESG_COLORS.get(theme), pct),
-                                 height="240px", key=key)
+                                 height="200px", key=key)
     else: 
         st.info("No ESG themes data available for the selected region or filter.")
 
@@ -693,3 +732,15 @@ def fix_columns(df: pd.DataFrame):
             renames[col] = 'outcome_colour'
             
     return df.rename(columns=renames)
+
+# Inject custom CSS to reduce vertical spacing between ESG gauge chart rows
+st.markdown("""
+    <style>
+    /* Further reduce vertical spacing between Streamlit columns containing echarts */
+    .element-container:has(.stEcharts) {
+        margin-bottom: -18px !important;
+        padding-bottom: 0 !important;
+    }
+    }
+    </style>
+""", unsafe_allow_html=True)
