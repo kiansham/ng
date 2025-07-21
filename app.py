@@ -164,7 +164,7 @@ def dashboard_page():
             with col2: 
                  render_map(geo_df, region)
 
-            col1, col2 = st.columns([1, 1.5])
+            col1, col2 = st.columns([1.2, 1])
             with col1: 
                 render_distribution(data, geo_df, region)
             with col2: 
