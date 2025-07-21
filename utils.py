@@ -545,14 +545,30 @@ def render_distribution(data: pd.DataFrame, geo_df: pd.DataFrame, region: str):
     render_header("analytics", title, 32, 28)
     
     if chart_data is not None and not chart_data.empty:
-        fig = go.Figure(go.Pie(labels=chart_data.index, values=chart_data.values, hole=0.8, 
-                              marker_colors=Config.CB_SAFE_PALETTE[:len(chart_data)], 
-                              textinfo='label+percent', hoverinfo='label+value', textfont_size=14))
-        fig.update_layout(height=360, width=400, margin=dict(l=10, r=30, t=10, b=10), 
-                         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                         showlegend=False, legend=dict(orientation="v", yanchor="top", y=1, 
-                                                     xanchor="right", x=1, font=dict(size=12)))
-        st.plotly_chart(fig, use_container_width=False)
+        fig = go.Figure(go.Pie(labels=chart_data.index,
+                               values=chart_data.values,
+                               hole=0.8,
+                               marker_colors=Config.CB_SAFE_PALETTE[:len(chart_data)],
+                               textinfo='label+percent',
+                               hoverinfo='label+value',
+                               textfont_size=14))
+        fig.update_layout(
+            height=330,
+            width=330,
+            margin=dict(l=10, r=30, t=10, b=10),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            showlegend=False,
+            legend=dict(
+                orientation="v",
+                yanchor="top",
+                y=1,
+                xanchor="right",
+                x=1,
+                font=dict(size=12)
+            )
+        )
+        st.plotly_chart(fig, use_container_width=True)
     else: 
         st.info("No data to display for this selection.")
 
