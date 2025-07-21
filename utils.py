@@ -494,13 +494,21 @@ def render_map(geo_df: pd.DataFrame, region: str):
         return
 
     PLOTLY_SCOPES = {
-        "Global": "world", "North America": "north america", "South America": "south america",
-        "Europe": "europe", "Asia": "asia", "Africa": "africa"
+        "Global": "world",
+        "North America": "north america",
+        "South America": "south america",
+        "Europe": "europe",
+        "Asia": "asia",
+        "Africa": "africa",
     }
+
+    # Bounding boxes for consistent regional views
     BBOXES = {
         "Oceania": {"lon": [110, 180], "lat": [-50, 10]},
         "South America": {"lon": [-82, -34], "lat": [-56, 13]},
-        "Africa": {"lon": [-20, 55], "lat": [-35, 38]}
+        "Africa": {"lon": [-20, 55], "lat": [-35, 38]},
+        "Europe": {"lon": [-25, 45], "lat": [35, 72]},
+        "North America": {"lon": [-170, -50], "lat": [5, 80]},
     }
 
     fig = px.choropleth(
@@ -521,7 +529,8 @@ def render_map(geo_df: pd.DataFrame, region: str):
         })
     else:
         scope = PLOTLY_SCOPES.get(region, "world")
-        fit = False if region == "Global" else "locations"
+        # Keep a consistent view of the region regardless of data density
+        fit = False
         geo_args.update({"scope": scope, "fitbounds": fit})
     
     fig.update_geos(**geo_args)
@@ -545,28 +554,21 @@ def render_distribution(data: pd.DataFrame, geo_df: pd.DataFrame, region: str):
     render_header("analytics", title, 32, 28)
     
     if chart_data is not None and not chart_data.empty:
-        fig = go.Figure(go.Pie(labels=chart_data.index,
-                               values=chart_data.values,
-                               hole=0.8,
-                               marker_colors=Config.CB_SAFE_PALETTE[:len(chart_data)],
-                               textinfo='label+percent',
-                               hoverinfo='label+value',
-                               textfont_size=14))
+        chart_data = chart_data.sort_values(ascending=False)
+        fig = go.Figure(go.Bar(
+            x=chart_data.values,
+            y=chart_data.index,
+            orientation='h',
+            marker_color=Config.CB_SAFE_PALETTE[:len(chart_data)]
+        ))
         fig.update_layout(
             height=330,
-            width=330,
-            margin=dict(l=10, r=30, t=10, b=10),
+            margin=dict(l=60, r=20, t=10, b=10),
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
-            showlegend=False,
-            legend=dict(
-                orientation="v",
-                yanchor="top",
-                y=1,
-                xanchor="right",
-                x=1,
-                font=dict(size=12)
-            )
+            xaxis_title='Count',
+            yaxis_title='',
+            showlegend=False
         )
         st.plotly_chart(fig, use_container_width=True)
     else: 
