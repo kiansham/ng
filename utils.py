@@ -500,7 +500,9 @@ def render_map(geo_df: pd.DataFrame, region: str):
     BBOXES = {
         "Oceania": {"lon": [110, 180], "lat": [-50, 10]},
         "South America": {"lon": [-82, -34], "lat": [-56, 13]},
-        "Africa": {"lon": [-20, 55], "lat": [-35, 38]}
+        "Africa": {"lon": [-20, 55], "lat": [-35, 38]},
+        # Focus on continental North America and a bit of surrounding ocean
+        "North America": {"lon": [-170, -50], "lat": [5, 75]}
     }
 
     fig = px.choropleth(
@@ -531,7 +533,7 @@ def render_map(geo_df: pd.DataFrame, region: str):
             bgcolor='rgba(0,0,0,0)', showframe=False, showcoastlines=False, 
             showcountries=True, showland=False, showocean=False, showlakes=False
         ),
-        height=300, margin=dict(l=10, r=40, t=10, b=10),
+        height=340, margin=dict(l=10, r=40, t=10, b=10),
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
     )
     
@@ -595,8 +597,8 @@ def render_gauges(data: pd.DataFrame, themes: list, key_prefix: str):
                         pct = int(round((count / total) * 100)) if total > 0 else 0
                         context = "overview" if key_prefix == "dashboard" else "geo_analysis"
                         key = f"esg_{context}_{key_prefix}_{theme.lower().replace(' ', '_')}"
-                        st_echarts(options=make_gauge(theme, count, Config.ESG_COLORS.get(theme), pct), 
-                                 height="200px", key=key)
+                        st_echarts(options=make_gauge(theme, count, Config.ESG_COLORS.get(theme), pct),
+                                 height="240px", key=key)
     else: 
         st.info("No ESG themes data available for the selected region or filter.")
 
