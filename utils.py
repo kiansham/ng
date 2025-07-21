@@ -266,11 +266,29 @@ def show_table(df: pd.DataFrame, cols: list = None):
 
 def make_chart(data: pd.Series, chart_type: str = "bar", **kwargs):
     colors = kwargs.get('colors', Config.CB_SAFE_PALETTE)
-    fig = px.bar(x=data.index, y=data.values, color=data.index, color_discrete_sequence=colors) if chart_type == "bar" else go.Figure()
+    orientation = kwargs.get('orientation', 'v')
+    
+    if chart_type == "bar":
+        if orientation == 'h':
+            fig = px.bar(x=data.values, y=data.index, color=data.index, 
+                        color_discrete_sequence=colors, orientation='h')
+        else:
+            fig = px.bar(x=data.index, y=data.values, color=data.index, 
+                        color_discrete_sequence=colors)
+    else:
+        fig = go.Figure()
+    # Set appropriate axis titles based on orientation
+    if orientation == 'h':
+        x_title = kwargs.get('xaxis_title', "Count")
+        y_title = kwargs.get('yaxis_title', "")
+    else:
+        x_title = kwargs.get('xaxis_title', "")
+        y_title = kwargs.get('yaxis_title', "Count")
+    
     fig.update_layout(
         title=kwargs.get('title', ''), 
-        xaxis_title="", 
-        yaxis_title="",
+        xaxis_title=x_title, 
+        yaxis_title=y_title,
         paper_bgcolor=kwargs.get('paper_bgcolor', Config.CHART_DEFAULTS["paper_bgcolor"]),
         plot_bgcolor=kwargs.get('plot_bgcolor', Config.CHART_DEFAULTS["plot_bgcolor"]),
         margin=kwargs.get('margin', Config.CHART_DEFAULTS["margin"]),
@@ -285,17 +303,50 @@ def make_gauge(label: str, value: int, colour: str, percentage: float = None):
     return {
         "tooltip": {"show": True, "formatter": tooltip},
         "series": [{
-            "type": "gauge", "startAngle": 180, "endAngle": 0, "radius": "115%",
-            "center": ["45%", "58%"], "itemStyle": {"color": colour},
-            "progress": {"show": True, "width": 15},
-            "axisLine": {"lineStyle": {"width": 15, "color": [[1, "#f0f2f6"]]}},
-            "splitLine": {"show": False}, "axisTick": {"show": False},
-            "axisLabel": {"show": False}, "pointer": {"show": False}, 
-            "min": 0, "max": 100,
+            "type": "gauge",
+            "startAngle": 90,
+            "endAngle": -270,
+            "radius": "85%",
+            "center": ["50%", "50%"],
+            "min": 0,
+            "max": 100,
+            "progress": {
+                "show": True,
+                "width": 8,
+                "roundCap": True,
+                "itemStyle": {
+                    "color": colour
+                }
+            },
+            "axisLine": {
+                "lineStyle": {
+                    "width": 8,
+                    "color": [[1, "#f0f2f6"]]
+                }
+            },
+            "axisTick": {"show": False},
+            "splitLine": {"show": False},
+            "axisLabel": {"show": False},
+            "pointer": {"show": False},
+            "title": {
+                "show": True,
+                "fontSize": 11,
+                "fontWeight": 500,
+                "color": "#666",
+                "offsetCenter": [0, "30%"]
+            },
+            "detail": {
+                "formatter": str(max(0, int(value or 0))),
+                "fontSize": 24,
+                "fontWeight": 600,
+                "color": colour,
+                "offsetCenter": [0, "-5%"],
+                "valueAnimation": True
+            },
             "data": [{"value": display, "name": label}],
-            "title": {"show": True, "offsetCenter": [0, "-30%"], "fontSize": 14, "fontWeight": 600, "color": "#262730"},
-            "detail": {"formatter": str(max(0, int(value or 0))), "offsetCenter": [0, 5], "fontSize": 24, "fontWeight": 700, "color": colour, "valueAnimation": True},
-            "animation": True, "animationDuration": 1000
+            "animation": True,
+            "animationDuration": 1200,
+            "animationEasing": "cubicOut"
         }]
     }
 
@@ -419,28 +470,25 @@ def render_geo_metrics(total: int, countries: int, most_active: str):
 
 def render_map(geo_df: pd.DataFrame, region: str):
     if geo_df.empty or "country" not in geo_df.columns or geo_df["country"].dropna().empty:
-        st.info("No geographic data available for the selected region.")
+        st.info("No geographic data available for selected region.")
         return
-
+        
     df = geo_df.groupby("country").size().reset_index(name="count")
     df['iso_code'] = cc.convert(names=df['country'], to='ISO3')
     df = df[df['iso_code'] != 'not found']
     if df.empty:
-        st.warning("No valid ISO codes found.")
+        st.warning("No valid geographic data to display on the map.")
         return
 
     PLOTLY_SCOPES = {
-        "Global": "world",
-        "North America": "north america",
-        "South America": "south america",
-        "Europe": "europe", 
-        "Asia": "asia",
-        "Africa": "africa"
+        "Global": "world", "North America": "north america", "South America": "south america",
+        "Europe": "europe", "Asia": "asia", "Africa": "africa"
     }
-
-    OCEANIA_BBOX = {"lon": [110, 180], "lat": [-50, 10]}
-    SOUTH_AMERICA_BBOX = {"lon": [-82, -34], "lat": [-56, 13]}
-    AFRICA_BBOX = {"lon": [-20, 55], "lat": [-35, 38]}
+    BBOXES = {
+        "Oceania": {"lon": [110, 180], "lat": [-50, 10]},
+        "South America": {"lon": [-82, -34], "lat": [-56, 13]},
+        "Africa": {"lon": [-20, 55], "lat": [-35, 38]}
+    }
 
     fig = px.choropleth(
         df,
@@ -448,37 +496,33 @@ def render_map(geo_df: pd.DataFrame, region: str):
         color="count",
         hover_name="country",
         color_continuous_scale="teal",
-        range_color=[0, df['count'].max()]
+        range_color=[0, df['count'].max() or 1]
     )
     
-    if region in ("Oceania", "Africa", "South America"):
-        bbox = {
-            "Oceania": OCEANIA_BBOX,
-            "Africa": AFRICA_BBOX,
-            "South America": SOUTH_AMERICA_BBOX
-        }[region]
-        geo_args = dict(
-            scope="world",
-            fitbounds=False,
-            showcountries=True,
-            lonaxis_range=bbox["lon"],
-            lataxis_range=bbox["lat"]
-        )
+    geo_args = {}
+    if region in BBOXES:
+        bbox = BBOXES[region]
+        geo_args.update({
+            "scope": "world", "fitbounds": False,
+            "lonaxis_range": bbox["lon"], "lataxis_range": bbox["lat"]
+        })
     else:
         scope = PLOTLY_SCOPES.get(region, "world")
         fit = False if region == "Global" else "locations"
-        geo_args = dict(scope=scope, fitbounds=fit, showcountries=True)
-
+        geo_args.update({"scope": scope, "fitbounds": fit})
+    
     fig.update_geos(**geo_args)
-
+    
     fig.update_layout(
-        geo=dict(bgcolor='rgba(0,0,0,0)', showframe=False, showcoastlines=True, showcountries=False,
-                 showland=False, showocean=False, showlakes=False, visible=True),
-        height=300, margin=dict(l=0, r=0, t=0, b=0),
+        geo=dict(
+            bgcolor='rgba(0,0,0,0)', showframe=False, showcoastlines=False, 
+            showcountries=True, showland=False, showocean=False, showlakes=False
+        ),
+        height=300, margin=dict(l=10, r=40, t=10, b=10),
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
     )
-
-    fig.update_coloraxes(colorbar=dict(thickness=5, len=0.7, x=1.02, xpad=10, y=0.5))
+    
+    fig.update_coloraxes(colorbar=dict(thickness=4, len=0.6, x=0.95, xpad=3, y=0.5))
     fig.update_traces(hovertemplate="<b>%{hovertext}</b><br>Engagements: %{z}<extra></extra>")
     st.plotly_chart(fig, use_container_width=True)
 
@@ -526,7 +570,7 @@ def render_gauges(data: pd.DataFrame, themes: list, key_prefix: str):
                         hash = hashlib.md5(sig.encode()).hexdigest()[:12]
                         key = f"esg_{context}_{key_prefix}_{theme.lower().replace(' ', '_')}_{hash}"
                         st_echarts(options=make_gauge(theme, count, Config.ESG_COLORS.get(theme), pct), 
-                                 height="200px", key=key)
+                                 height="120px", key=key)
     else: 
         st.info("No ESG themes data available for the selected region or filter.")
 

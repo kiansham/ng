@@ -74,65 +74,95 @@ def sidebar_filters(df: pd.DataFrame):
 
     return filters['progs'], filters['sector'], filters['region'], filters['country'], filters['outcome'], filters['sentiment'], status_values, filters['esg'], False, False, filters['theme'], filters['objectives'], repeat_values
 
+def render_progress_bars(metrics: dict):
+    rate = metrics.get('response_rate', 0)
+    st.markdown(f"Response Rate ({rate:.0f}%)")
+    st.progress(int(rate))
+
+    rate = metrics.get('success_rate', 0)
+    st.markdown(f"Success Rate ({rate:.0f}%)")
+    st.progress(int(rate))
+
+    rate = metrics.get('email_failed', 0)
+    st.markdown(f"Email Failed Rate ({rate:.0f}%)")
+    st.progress(int(rate))
+
+    rate = metrics.get('completion_rate', 0)
+    st.markdown(f"Completion Rate ({rate:.0f}%)")
+    st.progress(int(rate))
+
+
 def dashboard_page():
     data = st.session_state.DATA
     if data.empty: 
         st.warning("No engagement data available. Add an engagement or adjust filters.")
         return
 
-    selected = option_menu(None, ["Overview", "Additional Analysis"], icons=["bar-chart-line", "globe-americas"], orientation="horizontal", styles=NAV_STYLES)
+    selected = option_menu(None, ["Overview"], icons=["bar-chart-line"], orientation="horizontal", styles=NAV_STYLES)
 
     if selected == "Overview":
         with st.container(border=True):
             total = len(data)
             active = (data.get("initial_status", pd.Series(dtype=str)).str.lower() == "started").sum()
             not_started = (data.get("initial_status", pd.Series(dtype=str)).str.lower() == "not started").sum()
-            
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Total Engagements in System", total)
-            col2.metric("Initiated Engagements", active)
-            col3.metric("Engagements Not Started", not_started)
-
-            response_received = (data.get("outcome", pd.Series(dtype=str)).str.lower() == "response received").sum()
-            email_failed = (data.get("outcome", pd.Series(dtype=str)).str.lower() == "email failed").sum()
-
-            col1, col2 = st.columns(2)
-            col1.markdown(f'<div class="alert-success"><strong>:material/check: {response_received} Responses Received</strong><br>Positive engagement outcomes</div>', unsafe_allow_html=True)
-            col2.markdown(f'<div class="alert-urgent"><strong>:material/close: {email_failed} Emails Failed</strong><br>Require follow-up action</div>', unsafe_allow_html=True)
-
-            render_header("query_stats", "Key Metrics")
-            
             completed = (data.get("outcome", pd.Series(dtype=str)).str.lower() == "engagement complete").sum()
-            success = data.get("outcome", pd.Series(dtype=str)).isin(["Engagement Complete", "Response Received"]).sum()
-            success_rate = round(success / total * 100) if total > 0 else 0
 
-            col1, col2, col3 = st.columns([1, 1, 3.5])
-            col1.metric("Complete Engagements", completed)
-            col2.metric("Success Rate", f"{success_rate}%")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total Engagements Planned", total)
+            col2.metric("Initiated Engagements", active)
+            col3.metric("Engagements Completed", completed)
 
+            col1, col2, col3 = st.columns([1.5,3,3])
+            with col1:
+                render_header("query_stats", "Key Metrics")
+
+            with col2:
+                theme_pills = st.pills("", options=[
+                    ":material/thermostat: Climate", 
+                    ":material/water_drop: Water", 
+                    ":material/forest: Forests"
+                ], selection_mode="multi", key="analysis_theme_pills", label_visibility="collapsed")
+                if theme_pills:
+                    theme_conditions = []
+                    theme_map = {
+                        ":material/thermostat: Climate": "climate_change",
+                        ":material/water_drop: Water": "water", 
+                        ":material/forest: Forests": "forests"
+                    }
+                    for pill in theme_pills:
+                        if pill in theme_map:
+                            col_name = theme_map[pill]
+                            if col_name in data.columns:
+                                theme_conditions.append(data[col_name] == "Y")
+                    
+                    if theme_conditions:
+                        import pandas as pd
+                        theme_mask = pd.concat(theme_conditions, axis=1).any(axis=1) if len(theme_conditions) > 1 else theme_conditions[0]
+                        data = data[theme_mask]
             with col3:
-                render_header("center_focus_strong", "ESG Engagement Focus Areas", div_style="margin-top:-57px;")
-                render_gauges(data, ["Climate", "Water", "Forests", "Other"], "dashboard")
+                regions = ["Global"] + sorted(st.session_state.FULL_DATA.get("region", pd.Series()).dropna().unique())
+                region = st.selectbox("Focus on Region", regions, key='region_select')
+                st.session_state.selected_region = region
+                geo_df = data if region == "Global" else data[data.get("region") == region]
 
-            render_header("table_chart", "Engagement List")
-            show_table(data, Config.COLUMNS)
-
-            with st.columns(6)[-1]:
-                csv = convert_df_to_csv(data)
-                st.download_button("Download Table", csv, f"filtered_engagements_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv", "text/csv", icon=":material/download:", use_container_width=True)
-    elif selected == "Additional Analysis":
-        with st.container(border=True):
-            regions = ["Global"] + sorted(st.session_state.FULL_DATA.get("region", pd.Series()).dropna().unique())
-            region = st.selectbox("Focus on Region", regions, key='region_select')
-            st.session_state.selected_region = region
             
-            geo_df = data if region == "Global" else data[data.get("region") == region]
-
-            col1, col2 = st.columns([1, 3])
-            with col1: 
-                render_geo_metrics(len(geo_df), geo_df.get("country", pd.Series()).nunique(), geo_df.get("country", pd.Series()).mode()[0] if not geo_df.get("country", pd.Series()).empty else "None")
+            col1, col2 = st.columns([1,2])
+            with col1:
+                completed = (data.get("outcome", pd.Series(dtype=str)).str.lower() == "engagement complete").sum()
+                success = data.get("outcome", pd.Series(dtype=str)).isin(["Engagement Complete", "Response Received"]).sum()
+                response_received = (data.get("outcome", pd.Series(dtype=str)).str.lower() == "response received").sum()
+                success_rate = round(success / total * 100) if total > 0 else 0
+                response_rate = round(response_received / total * 100) if total > 0 else 0
+                completion_rate = round(completed / total * 100) if total > 0 else 0
+                metrics = {
+                'success_rate': success_rate,
+                'response_rate': response_rate,
+                'completion_rate': completion_rate
+                }
+                render_progress_bars(metrics)
+            
             with col2: 
-                render_map(geo_df, region)
+                 render_map(geo_df, region)
 
             col1, col2 = st.columns([1, 1.5])
             with col1: 
@@ -150,6 +180,13 @@ def dashboard_page():
                 st.plotly_chart(make_chart(sector_data, chart_type="bar", height=400), use_container_width=True)
             else: 
                 st.info("No sector data available for this selection.")
+
+            render_header("table_chart", "Engagement List")
+            show_table(data, Config.COLUMNS)
+
+            with st.columns(6)[-1]:
+                csv = convert_df_to_csv(data)
+                st.download_button("Download Table", csv, f"filtered_engagements_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv", "text/csv", icon=":material/download:", use_container_width=True)
 
 def ops_page():
     selected = option_menu(None, ["Add New Engagement", "Add New Interaction", "Engagement Records", "Database"],
