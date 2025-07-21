@@ -11,14 +11,23 @@ from typing import Union
 from pathlib import Path
 from config import Config
 
-cc = coco.CountryConverter()
+@st.cache_resource
+def get_country_converter():
+    return coco.CountryConverter()
+
+cc = get_country_converter()
+
+@st.cache_data
+def _read_css(path: Path) -> str:
+    return path.read_text() if path.is_file() else ""
 
 def load_css(path: Union[str, Path]) -> None:
     path = Path(path)
-    if not path.is_file():
+    css = _read_css(path)
+    if not css:
         st.warning(f"CSS file not found: {path}")
         return
-    st.markdown(f"<style>{path.read_text()}</style>", unsafe_allow_html=True)
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 def refresh_data():
     load_db.clear()
@@ -468,13 +477,17 @@ def render_geo_metrics(total: int, countries: int, most_active: str):
     st.metric("Countries Engaged", countries)
     st.metric("Most Active Country", most_active)
 
+@st.cache_data
+def _convert_to_iso(countries: tuple) -> list:
+    return cc.convert(names=list(countries), to='ISO3')
+
 def render_map(geo_df: pd.DataFrame, region: str):
     if geo_df.empty or "country" not in geo_df.columns or geo_df["country"].dropna().empty:
         st.info("No geographic data available for selected region.")
         return
         
     df = geo_df.groupby("country").size().reset_index(name="count")
-    df['iso_code'] = cc.convert(names=df['country'], to='ISO3')
+    df['iso_code'] = _convert_to_iso(tuple(df['country']))
     df = df[df['iso_code'] != 'not found']
     if df.empty:
         st.warning("No valid geographic data to display on the map.")
