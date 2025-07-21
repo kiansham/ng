@@ -542,7 +542,7 @@ def render_map(geo_df: pd.DataFrame, region: str):
 
 def render_distribution(data: pd.DataFrame, geo_df: pd.DataFrame, region: str):
     chart_data = data.get("region", pd.Series()).value_counts() if region == "Global" else geo_df.get("country", pd.Series()).value_counts()
-    title = "Regional Distribution" if region == "Global" else f"Countries in {region}"
+    title = "Regional & Sector Distribution" if region == "Global" else f"Countries in {region}"
     render_header("analytics", title, 32, 28)
     
     if chart_data is not None and not chart_data.empty:
