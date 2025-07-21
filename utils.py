@@ -593,13 +593,10 @@ def render_gauges(data: pd.DataFrame, themes: list, key_prefix: str):
                     with cols[j]:
                         count = int(theme_data.get(theme, 0))
                         pct = int(round((count / total) * 100)) if total > 0 else 0
-                        import hashlib
                         context = "overview" if key_prefix == "dashboard" else "geo_analysis"
-                        sig = f"{key_prefix}_{theme}_{len(data)}_{total}"
-                        hash = hashlib.md5(sig.encode()).hexdigest()[:12]
-                        key = f"esg_{context}_{key_prefix}_{theme.lower().replace(' ', '_')}_{hash}"
+                        key = f"esg_{context}_{key_prefix}_{theme.lower().replace(' ', '_')}"
                         st_echarts(options=make_gauge(theme, count, Config.ESG_COLORS.get(theme), pct), 
-                                 height="120px", key=key)
+                                 height="200px", key=key)
     else: 
         st.info("No ESG themes data available for the selected region or filter.")
 
