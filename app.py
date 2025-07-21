@@ -115,13 +115,12 @@ def dashboard_page():
             col1, col2, col3 = st.columns([1.5,3,3])
             with col1:
                 render_header("query_stats", "Key Metrics")
-
             with col2:
-                theme_pills = st.pills("", options=[
+                theme_pills = st.pills(" Filter by Engagement Type", options=[
                     ":material/thermostat: Climate", 
                     ":material/water_drop: Water", 
                     ":material/forest: Forests"
-                ], selection_mode="multi", key="analysis_theme_pills", label_visibility="collapsed")
+                ], selection_mode="multi", key="analysis_theme_pills", label_visibility="visible")
                 if theme_pills:
                     theme_conditions = []
                     theme_map = {
@@ -136,12 +135,11 @@ def dashboard_page():
                                 theme_conditions.append(data[col_name] == "Y")
                     
                     if theme_conditions:
-                        import pandas as pd
                         theme_mask = pd.concat(theme_conditions, axis=1).any(axis=1) if len(theme_conditions) > 1 else theme_conditions[0]
                         data = data[theme_mask]
             with col3:
                 regions = ["Global"] + sorted(st.session_state.FULL_DATA.get("region", pd.Series()).dropna().unique())
-                region = st.selectbox("Focus on Region", regions, key='region_select')
+                region = st.selectbox("Filter by Region", regions, key='region_select')
                 st.session_state.selected_region = region
                 geo_df = data if region == "Global" else data[data.get("region") == region]
 
